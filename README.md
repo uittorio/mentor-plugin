@@ -8,11 +8,10 @@ Instead of handing you answers, Claude will guide you with questions, hints, and
 
 ## Install
 
-Install into a specific project (recommended):
+Install into a specific project where you are creating a project for leaning purposes as this is automatically invoked and replace the usual solutionise behaviour:
 
 ```
 /plugin install github:valex91/mentor-plugin
-
 ```
 
 This scopes mentor mode to that project only. Claude behaves normally in all other projects.
