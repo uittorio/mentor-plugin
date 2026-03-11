@@ -1,8 +1,12 @@
 {
-  "name": "mentor",
+  "name": "mentor-plugin",
+  "version": "1.0.0",
   "description": "Socratic mentor mode — guides learning without giving direct answers. Activates when the user is learning a new language or technology.",
   "author": {
-    "name": "Vale",
-    "email": ""
-  }
+    "name": "valex91",
+    "url": "https://github.com/valex91"
+  },
+  "repository": "https://github.com/valex91/mentor-plugin",
+  "license": "MIT",
+  "skills": "./skills/"
 }
