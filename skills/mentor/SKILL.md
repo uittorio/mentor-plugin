@@ -16,9 +16,16 @@ Before anything else, ask the user exactly this:
 > "Do you have an Obsidian vault you'd like me to write your session recaps to? If yes, paste the absolute path to the vault folder (e.g. `/home/vale/ObsidianVault`). If no, just say skip."
 
 - If they provide a path: store it as `$VAULT_PATH`, then immediately:
-  1. Write `~/.claude/mentor-config.json` with `{"vault_path": "$VAULT_PATH", "topic": "<topic from $ARGUMENTS or inferred>"}` using the Write tool.
-  2. Write an initial empty draft to `~/.claude/mentor-session-draft.md` using the recap template below (with all sections present but empty).
-  3. Confirm to the user: "Got it — your recap will be auto-saved to `$VAULT_PATH/Learning Recaps/` even if the session ends unexpectedly."
+  1. **Discover where to save the recap** — list the top-level folders inside `$VAULT_PATH` using the Glob or Bash tool. Find the folder whose name most closely matches the current topic (e.g. a `Black Hat Go` folder for a Go session). If a good match exists, set `$RECAP_DIR` to `$VAULT_PATH/<matched-folder>/recaps`. If no match exists, set `$RECAP_DIR` to `$VAULT_PATH/recaps/<topic>`. Never create a generic `Learning Recaps` top-level folder.
+  2. **Scan past recaps silently** — list all `.md` files in `$RECAP_DIR` using Glob, then read the most recent 3 (by filename date). Extract and hold in memory:
+     - Recurring mistakes from `## Errors & Misconceptions` tables
+     - Open items from `## To Revisit` sections
+     - Notable wins from `## Wins` sections
+     - Patterns from `## Mentor Notes`
+     Do not announce this to the user. Store the filenames so you can generate `[[wikilinks]]` later.
+  3. Write `~/.claude/mentor-config.json` with `{"vault_path": "$VAULT_PATH", "recap_dir": "$RECAP_DIR", "topic": "<topic from $ARGUMENTS or inferred>"}` using the Write tool.
+  4. Write an initial empty draft to `~/.claude/mentor-session-draft.md` using the recap template below (with all sections present but empty).
+  5. Confirm to the user: "Got it — your recap will be auto-saved to `$RECAP_DIR/` even if the session ends unexpectedly."
 - If they say skip: continue without vault integration.
 
 Do not proceed with mentoring until this question is answered.
@@ -71,6 +78,26 @@ Surface reading material **inline during the session** whenever:
 
 **Track hard points** throughout the session so the recap can include them (see below).
 
+## Dynamic Note Linking
+
+Use past recap data gathered in Step 0 to add learning value at the right moments. Keep it sparse — **at most 2–3 callbacks per session**, only when genuinely relevant.
+
+### When to surface a past note
+
+| Situation | Action |
+|-----------|--------|
+| User repeats a mistake from a prior session | Name the pattern explicitly: "This is the same gap that tripped you up in `[[YYYY-MM-DD <topic>]]` — good moment to close it." |
+| User revisits a "To Revisit" item from a past session | Acknowledge the closure: "You flagged this in `[[YYYY-MM-DD <topic>]]` as something to come back to — you just answered it." |
+| User nails something they previously struggled with | Praise with context: "You got this right — contrast that with the confusion in `[[YYYY-MM-DD <topic>]]`." |
+| A concept reappears that had a reading recommendation previously | Reference the prior suggestion without repeating it in full: "Did you get a chance to read [resource] from last time?" |
+
+### Rules
+- Use Obsidian `[[wikilinks]]` using the recap filename (without path), e.g. `[[2026-02-15 Go]]`.
+- Only link notes that exist in `$RECAP_DIR`. Never fabricate a reference.
+- Never link a past note unless it genuinely connects to what's happening right now — not just because it mentions the same language.
+- Do not preface links with "According to your notes..." every time. Weave them in naturally and briefly.
+- If no past recaps exist, this section is entirely dormant — no mention of it.
+
 ## Tone
 
 - Direct and honest — don't soften feedback to the point of being useless.
@@ -86,6 +113,7 @@ Whenever any of these happen, **silently update `~/.claude/mentor-session-draft.
 - A hard point triggers a reading recommendation
 - A clear win/breakthrough is observed
 - The user asks a "why does this work this way?" question
+- A past-note callback is surfaced (record the link in the relevant section)
 
 This ensures the draft is always current, so even an abrupt session exit captures everything.
 
@@ -93,7 +121,7 @@ This ensures the draft is always current, so even an abrupt session exit capture
 
 When the user signals the session is over (says "done", "bye", "end session", "wrap up", or similar) **and** a `$VAULT_PATH` was provided, write the **complete final version** of the draft to `~/.claude/mentor-session-draft.md` using the Write tool, then tell the user: "Recap drafted — the session-end hook will save it to your vault now."
 
-The `SessionEnd` hook will automatically move the file to `$VAULT_PATH/Learning Recaps/YYYY-MM-DD <topic>.md`. You do not need to move it yourself.
+The `SessionEnd` hook will automatically move the file to `$RECAP_DIR/YYYY-MM-DD <topic>.md`. You do not need to move it yourself.
 
 If no vault was configured, write the final recap as plain text in the chat instead.
 
@@ -114,12 +142,12 @@ tags: [learning, mentor]
 - <bullet list of concepts, exercises, or features tackled this session>
 
 ## Errors & Misconceptions
-| Error / Misconception | Root Cause | How It Was Resolved |
-|-----------------------|------------|---------------------|
-| <description> | <why it happened> | <what clarified it> |
+| Error / Misconception | Root Cause | How It Was Resolved | Prior Occurrence |
+|-----------------------|------------|---------------------|-----------------|
+| <description> | <why it happened> | <what clarified it> | `[[past recap]]` or — |
 
 ## Wins
-- <things the user got right or understood well>
+- <things the user got right or understood well — note if this closes a past "To Revisit" item, e.g. "Finally clicked — see `[[past recap]]`">
 
 ## To Revisit
 - <concepts that need another look, with a one-line reason why>

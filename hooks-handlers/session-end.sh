@@ -16,8 +16,12 @@ DRAFT="$HOME/.claude/mentor-session-draft.md"
 
 VAULT_PATH=$(python3 -c "import json; d=json.load(open('$CONFIG')); print(d.get('vault_path',''))" 2>/dev/null || true)
 TOPIC=$(python3 -c "import json; d=json.load(open('$CONFIG')); print(d.get('topic','session'))" 2>/dev/null || echo "session")
+RECAP_DIR=$(python3 -c "import json; d=json.load(open('$CONFIG')); print(d.get('recap_dir',''))" 2>/dev/null || true)
 
 [[ -z "$VAULT_PATH" ]] && exit 0
+
+# Fall back to a sensible default if recap_dir was never written (old config)
+[[ -z "$RECAP_DIR" ]] && RECAP_DIR="$VAULT_PATH/recaps/$TOPIC"
 
 # Read the exit reason from stdin (JSON from Claude Code)
 INPUT=$(cat)
@@ -36,7 +40,7 @@ if [[ "$REASON" != "prompt_input_exit" && "$REASON" != "logout" ]]; then
 fi
 
 # Ensure destination folder exists
-DEST_DIR="$VAULT_PATH/Learning Recaps"
+DEST_DIR="$RECAP_DIR"
 mkdir -p "$DEST_DIR"
 
 DATE=$(date +%Y-%m-%d)
