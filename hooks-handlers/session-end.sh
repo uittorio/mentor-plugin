@@ -5,8 +5,9 @@
 
 set -euo pipefail
 
-CONFIG="$HOME/.claude/mentor-config.json"
-DRAFT="$HOME/.claude/mentor-session-draft.md"
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
+CONFIG="$PROJECT_DIR/.claude/mentor-config.json"
+DRAFT="$PROJECT_DIR/.claude/mentor-session-draft.md"
 
 # Nothing to do if no draft was written this session
 [[ ! -f "$DRAFT" ]] && exit 0
