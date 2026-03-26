@@ -1,0 +1,105 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  # ── 1. Build Rust binaries ─────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.artifact }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: mentor-mcp-linux-x86_64
+            binary: sm2
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact: mentor-mcp-darwin-arm64
+            binary: sm2
+
+    steps:
+      - uses: actions/checkout@latest
+
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
+
+      - uses: actions/cache@latest
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            mcp/sm2/target
+          key: cargo-${{ matrix.target }}-${{ hashFiles('mcp/sm2/Cargo.lock') }}
+          restore-keys: cargo-${{ matrix.target }}-
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+        working-directory: mcp/sm2
+
+      - uses: actions/upload-artifact@latest
+        with:
+          name: ${{ matrix.artifact }}
+          path: mcp/sm2/target/${{ matrix.target }}/release/${{ matrix.binary }}
+
+  # ── 2. Release + publish plugin branch (tags only) ─────────────────────────
+  publish:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@latest
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@latest
+        with:
+          path: artifacts
+          merge-multiple: false
+
+      - name: Create GitHub release
+        run: |
+          for dir in artifacts/*/; do
+            name=$(basename "$dir")
+            find "$dir" -type f -exec mv {} "artifacts/${name}" \;
+            rmdir "$dir" 2>/dev/null || true
+          done
+          gh release create "$GITHUB_REF_NAME" artifacts/* \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Push to claude-plugin-release
+        run: |
+          if git ls-remote --exit-code origin claude-plugin-release; then
+            git fetch origin claude-plugin-release
+            git worktree add /tmp/plugin-branch claude-plugin-release
+          else
+            git worktree add --orphan -b claude-plugin-release /tmp/plugin-branch
+          fi
+
+          rm -rf /tmp/plugin-branch/*
+          cp -r .claude-plugin/. /tmp/plugin-branch/
+          cp scripts/mcp-server.sh /tmp/plugin-branch/mcp-server.sh
+
+          cd /tmp/plugin-branch
+          git add .
+          git diff --cached --quiet && echo "No changes to publish" && exit 0
+          git commit -m "chore: publish plugin ${GITHUB_REF_NAME}"
+          git tag "plugin-${GITHUB_REF_NAME}"
+          git push origin claude-plugin-release
+          git push origin "plugin-${GITHUB_REF_NAME}"

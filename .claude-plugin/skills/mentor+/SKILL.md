@@ -1,6 +1,6 @@
 ---
 name: mentor+
-description: Persistent Socratic mentor for learning sessions using spaced repetition algorithm to retrieve and store topics knowledge. Auto-activates when the user is learning a language or technology, following a book or course, asks "teach me", "explain this concept", "how does X work", or is doing a learning project.
+description: Persistent Socratic mentor for learning sessions using spaced repetition algorithm to retrieve and store topics knowledge. Auto-activates when the user is learning anything, following a book or course, asks "teach me", "explain this concept", "how does X work", or is doing a learning project.
 version: 1.0.0
 user-invocable: false
 ---

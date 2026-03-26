@@ -1,8 +1,12 @@
 # mentor-plugin
 
-A Claude Code plugin that turns Claude into a Socratic mentor for learning projects.
+A plugin that turns the code agent into a Socratic mentor for learning projects. Available for Claude and Opencode
 
-Instead of handing you answers, Claude guides you with questions, hints, and explanations — building understanding rather than dependency. At the end of every session it writes a structured learning recap to your Obsidian vault automatically, even if the session ends unexpectedly.
+Instead of handing you answers, the code agent will guide you with questions, hints, and explanations — building understanding rather than dependency.
+
+# Claude installation
+
+At the end of every session it writes a structured learning recap to your Obsidian vault automatically, even if the session ends unexpectedly.
 
 > **Always on.** Once installed in a project, mentor mode is active for every message in that project. Claude will never hand you solutions — it will guide you to find them yourself.
 
@@ -12,7 +16,7 @@ Install into the project you are using for learning. Mentor mode is scoped to th
 
 **Step 1 — Add the marketplace:**
 ```
-/plugin marketplace add valex91/mentor-plugin
+/plugin marketplace add uittorio/mentor-plugin
 ```
 
 **Step 2 — Install the plugin:**
