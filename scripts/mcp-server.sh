@@ -26,7 +26,7 @@ if [ ! -f "$BINARY" ]; then
   mkdir -p "${HOME}/.local/bin"
   echo "Downloading mentor-mcp ${VERSION} for ${OS}-${ARCH}..." >&2
   curl -fsSL \
-    "https://github.com/uittorio/mentor-plugin/releases/download/${VERSION}/${ARTIFACT}" \
+    "https://github.com/${REPO}/releases/download/${VERSION}/${ARTIFACT}" \
     -o "$BINARY"
   chmod +x "$BINARY"
 fi

@@ -24,12 +24,12 @@ jobs:
             binary: sm2
 
     steps:
-      - uses: actions/checkout@6
+      - uses: actions/checkout@v6
 
       - name: Add target
         run: rustup target add ${{ matrix.target }}
 
-      - uses: actions/cache@latest
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -45,7 +45,7 @@ jobs:
       - name: Rename binary
         run: cp mcp/sm2/target/${{ matrix.target }}/release/${{ matrix.binary }} ${{ matrix.artifact }}
 
-      - uses: actions/upload-artifact@latest
+      - uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
@@ -59,11 +59,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@latest
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/download-artifact@latest
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
