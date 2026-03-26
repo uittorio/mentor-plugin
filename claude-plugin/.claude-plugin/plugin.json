@@ -8,6 +8,5 @@
   },
   "repository": "https://github.com/uittorio/mentor-plugin",
   "license": "MIT",
-  "skills": "./skills/",
-  "hooks": "./hooks/hooks.json"
+  "skills": "./skills/"
 }
