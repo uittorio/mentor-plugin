@@ -24,7 +24,7 @@ jobs:
             binary: sm2
 
     steps:
-      - uses: actions/checkout@latest
+      - uses: actions/checkout@6
 
       - name: Add target
         run: rustup target add ${{ matrix.target }}
@@ -42,10 +42,13 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
         working-directory: mcp/sm2
 
+      - name: Rename binary
+        run: cp mcp/sm2/target/${{ matrix.target }}/release/${{ matrix.binary }} ${{ matrix.artifact }}
+
       - uses: actions/upload-artifact@latest
         with:
           name: ${{ matrix.artifact }}
-          path: mcp/sm2/target/${{ matrix.target }}/release/${{ matrix.binary }}
+          path: ${{ matrix.artifact }}
 
   # ── 2. Release + publish plugin branch (tags only) ─────────────────────────
   publish:
@@ -63,15 +66,10 @@ jobs:
       - uses: actions/download-artifact@latest
         with:
           path: artifacts
-          merge-multiple: false
+          merge-multiple: true
 
       - name: Create GitHub release
         run: |
-          for dir in artifacts/*/; do
-            name=$(basename "$dir")
-            find "$dir" -type f -exec mv {} "artifacts/${name}" \;
-            rmdir "$dir" 2>/dev/null || true
-          done
           gh release create "$GITHUB_REF_NAME" artifacts/* \
             --title "$GITHUB_REF_NAME" \
             --generate-notes
