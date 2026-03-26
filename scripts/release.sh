@@ -17,6 +17,10 @@ sed -i '' "s/^version = \".*\"/version = \"${VERSION}\"/" "$MCP_CARGO_TOML"
 sed -i '' "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" "$CLAUDE_PLUGIN_JSON"
 sed -i '' "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" "$CLAUDE_MARKETPLACE_JSON"
 
+cd mcp/sm2
+cargo build
+cd ../..
+
 git add "$CLAUDE_PLUGIN_JSON" "$CLAUDE_MARKETPLACE_JSON" "$MCP_SCRIPT" "$MCP_CARGO_TOML" "$MCP_CARGO_TOML_LOCK"
 git commit -m "release: v${VERSION}"
 git tag "v${VERSION}"
