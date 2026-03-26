@@ -1,0 +1,16 @@
+{
+  "description": "Mentor plugin — auto-saves learning recap to Obsidian vault on session end, regardless of how the session terminated",
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks-handlers/session-end.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Socratic mentor mode — guides learning without giving direct answers. Activates when the user is learning a new language or technology.",
   "author": {
-    "name": "valex91",
-    "url": "https://github.com/valex91"
+    "name": "uittorio",
+    "url": "https://github.com/uittorio"
   },
-  "repository": "https://github.com/valex91/mentor-plugin",
+  "repository": "https://github.com/uittorio/mentor-plugin",
   "license": "MIT",
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json"

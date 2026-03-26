@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "agent-mentor": {
+      "type": "stdio",
+      "command": "./mcp/sm2/target/release/sm2"
+    }
+  }
+}

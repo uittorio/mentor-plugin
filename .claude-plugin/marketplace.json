@@ -1,7 +1,7 @@
 {
   "name": "mentor-plugins",
   "owner": {
-    "name": "valex91"
+    "name": "uittorio"
   },
   "metadata": {
     "description": "Socratic mentor mode for learning new languages and technologies"
@@ -9,13 +9,13 @@
   "plugins": [
     {
       "name": "mentor-plugin",
-      "source": "./",
+      "source": "./claudeplugin",
       "description": "Socratic mentor mode — guides learning without giving direct answers. Auto-activates when the user is learning a language or technology.",
       "version": "1.0.0",
       "author": {
-        "name": "valex91"
+        "name": "uittorio"
       },
-      "repository": "https://github.com/valex91/mentor-plugin",
+      "repository": "https://github.com/uittorio/mentor-plugin",
       "license": "MIT",
       "keywords": ["learning", "mentoring", "education", "socratic"]
     }
