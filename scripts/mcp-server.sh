@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # VERSION is set locally by scripts/release.sh before tagging.
-VERSION="v0.1.0"
+VERSION="v0.0.2"
 REPO="uittorio/mentor-plugin"
 
 # Supported artifacts — add new platforms here
