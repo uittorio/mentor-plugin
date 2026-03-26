@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CLAUDE_PLUGIN_JSON=".claude-plugin/plugin.json"
-CLAUDE_MARKETPLACE_JSON=".claude-plugin/marketplace.json"
+CLAUDE_PLUGIN_JSON="claude-plugin/.claude-plugin/plugin.json"
+CLAUDE_MARKETPLACE_JSON="claude-plugin/.claude-plugin/marketplace.json"
 MCP_SCRIPT="scripts/mcp-server.sh"
 MCP_CARGO_TOML="mcp/sm2/Cargo.toml"
 MCP_CARGO_TOML_LOCK="mcp/sm2/Cargo.lock"

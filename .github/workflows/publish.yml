@@ -91,7 +91,7 @@ jobs:
           fi
 
           rm -rf /tmp/plugin-branch/*
-          cp -r .claude-plugin/. /tmp/plugin-branch/
+          cp -r claude-plugin/. /tmp/plugin-branch/
           cp scripts/mcp-server.sh /tmp/plugin-branch/mcp-server.sh
 
           cd /tmp/plugin-branch
