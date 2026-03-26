@@ -7,7 +7,7 @@ user-invocable: true
 
 # MCP Smoke Test
 
-Call all three tools from `agent-mentor-local` in sequence and print each raw response. Do not interpret or act on the results — just show them.
+Call all three tools from `agent-mentor` in sequence and print each raw response. Do not interpret or act on the results — just show them.
 
 ## Steps
 
