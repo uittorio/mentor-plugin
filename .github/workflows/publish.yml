@@ -98,7 +98,6 @@ jobs:
           git add .
           git diff --cached --quiet && echo "No changes to publish" && exit 0
           git commit -m "chore: publish plugin ${GITHUB_REF_NAME}"
-          git tag "plugin-${GITHUB_REF_NAME}"
           git push origin claude-plugin-release
           git push origin "plugin-${GITHUB_REF_NAME}"
 
@@ -119,6 +118,5 @@ jobs:
           git add .
           git diff --cached --quiet && echo "No changes to publish" && exit 0
           git commit -m "chore: publish plugin ${GITHUB_REF_NAME}"
-          git tag "plugin-${GITHUB_REF_NAME}"
           git push origin opencode-plugin-release
           git push origin "plugin-${GITHUB_REF_NAME}"
