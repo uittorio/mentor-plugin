@@ -50,10 +50,10 @@ rm -f ~/.local/bin/mentor-mcp-*
 Remove the skills from wherever you installed them (global or project):
 ```bash
 # global
-rm -rf ~/.config/opencode/skills/mentor ~/.config/opencode/skills/mentor+
+rm -rf  ~/.config/opencode/skills/mentor+
 
 # project
-rm -rf .opencode/skills/mentor .opencode/skills/mentor+
+rm -rf .opencode/skills/mentor+
 ```
 
 Remove the MCP server script:
