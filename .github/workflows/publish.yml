@@ -111,7 +111,8 @@ jobs:
 
           rm -rf /tmp/opencode-branch/*
           cp -r opencode-plugin/. /tmp/opencode-branch/
-          cp scripts/mcp-server.sh /tmp/opencode-branch/mcp-server.sh
+          mkdir -p /tmp/opencode-branch/agent-mentor
+          cp scripts/mcp-server.sh /tmp/opencode-branch/agent-mentor/mcp-server.sh
 
           cd /tmp/opencode-branch
           git add .

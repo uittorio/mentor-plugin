@@ -3,7 +3,7 @@
   "mcp": {
     "agent-mentor": {
       "type": "local",
-      "command": ["./mcp-server.sh"]
+      "command": ["./agent-mentor/mcp-server.sh"]
     }
   }
 }
