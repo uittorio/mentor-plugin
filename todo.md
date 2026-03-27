@@ -5,13 +5,12 @@ learn about mcp, how are theu called with a coding agent (you will see these in 
 Installation/release
 
 Claude
-  split branches for releases to keep opencode vs claudecode difference and lean. 
-  generate binary in releases
-  we need a script to install the binary from releases for the mcp server and test it
   consider that skills can be shared (need to see if we can move them around)
+  hooks. obsidian
+  rename mcp tools domain. a bit confusing 
 
 Opencode
-  release for claude
+  release
   test the flow
   
 Modify readme to include both claude and opencode

@@ -101,3 +101,24 @@ jobs:
           git tag "plugin-${GITHUB_REF_NAME}"
           git push origin claude-plugin-release
           git push origin "plugin-${GITHUB_REF_NAME}"
+
+      - name: Push to opencode-plugin-release
+        run: |
+          if git ls-remote --exit-code origin opencode-plugin-release; then
+            git fetch origin opencode-plugin-release
+            git worktree add /tmp/plugin-branch opencode-plugin-release
+          else
+            git worktree add --orphan -b opencode-plugin-release /tmp/plugin-branch
+          fi
+
+          rm -rf /tmp/plugin-branch/*
+          cp -r opencode-plugin/. /tmp/plugin-branch/
+          cp scripts/mcp-server.sh /tmp/plugin-branch/mcp-server.sh
+
+          cd /tmp/plugin-branch
+          git add .
+          git diff --cached --quiet && echo "No changes to publish" && exit 0
+          git commit -m "chore: publish plugin ${GITHUB_REF_NAME}"
+          git tag "plugin-${GITHUB_REF_NAME}"
+          git push origin opencode-plugin-release
+          git push origin "plugin-${GITHUB_REF_NAME}"
