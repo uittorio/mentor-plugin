@@ -1,33 +1,40 @@
-# Release strategy
-This projects comes up with different tools for the agentic workflow. At the moment it provides
+# Release Strategy
 
-- Skills
-- MCP
-- configuration based on the coding agent
+This project provides a Socratic mentor plugin for agentic coding tools. It ships:
 
-The skills are simple md files and the MCP is an application written in Rust. In order to prevent users the need to run rust in their agentic environment the release process will create a binary for different operating systems. 
+- **Skills** — Markdown instruction files loaded by the coding agent
+- **MCP server** — A Rust binary exposing knowledge-tracking tools via the Model Context Protocol
+- **Hooks** — Session lifecycle scripts (Claude Code only)
 
-When copying or installing this plugin we want to just provide the essential files instead of cloning the entire repo.
+## Branch-based distribution
 
-For Claude code plugin you can create a marketplace and easil install a plugin but that ends up cloning the entire repository.
+Each supported coding agent gets its own release branch containing only the files it needs. This avoids users having to clone the full repository.
 
-To prevent that the release pipeline will push to separate branches the plugin files needed for each coding agent
+| Agent | Release branch |
+|---|---|
+| Claude Code | `claude-plugin-release` |
+| OpenCode | `opencode-plugin-release` |
 
-- opencode-plugin-release
-- clade-plugin-release
+The CI pipeline pushes to these branches automatically on every version tag.
 
-## How are the different files handled
+## What goes where
 
-### Skills 
-Skills are purely copied in the release branch
+### Skills
+Copied from `claude-plugin/skills/` or `opencode-plugin/skills/` into the corresponding release branch as-is.
 
-### Configuration files
-Configuration files are purely copied in the release branch. Examples
-- opencode.json
-- .mcp.json (claude code)
-- 
+### Agent configuration
+Agent-specific config files are copied into the release branch. Examples:
+- `.mcp.json` — Claude Code MCP server registration
+- `opencode.json` — OpenCode MCP server registration
+
+### MCP server script
+`scripts/mcp-server.sh` is copied into the release branch. It handles downloading the correct binary for the user's OS/arch on first run.
 
 ### MCP binary
-The mcp binary is released in the github release. For example, at this link you can find the [binaries] (https://github.com/uittorio/mentor-plugin/releases). Binaries dont need to be download because they are downloaded as part of the mcp-server.sh script that will download the correct binary based on your operating system. The file will be downloaded in this folder with a version to handle updates.
+The Rust binary is compiled for each supported platform and published as GitHub release assets. The `mcp-server.sh` script downloads the right binary automatically and caches it at:
 
-`${HOME}/.local/bin/mentor-mcp-${VERSION}`
+```
+~/.local/bin/mentor-mcp-<version>
+```
+
+Supported platforms: `linux-x86_64`, `darwin-arm64`.
