@@ -6,11 +6,15 @@ Releases are distributed via dedicated branches — see [Release Strategy](./REL
 
 ## OpenCode
 
+### Global config (`~/.config/opencode/`)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/opencode-plugin-release/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/opencode-plugin-release/install.sh | bash -s global
 ```
 
-The installer will ask whether to install globally (`~/.config/opencode/`) or for the current project only (`.opencode/`). The MCP binary is downloaded automatically on first use.
+### Local config (`.opencode/`)
+```bash
+curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/opencode-plugin-release/install.sh | bash -s
+```
 
 ## Claude Code
 
