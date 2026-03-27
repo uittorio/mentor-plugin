@@ -5,6 +5,8 @@ REPO="uittorio/mentor-plugin"
 BRANCH="opencode-plugin-release"
 BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 
+MODE="${1:-}"
+
 download() {
   local src="$1" dest="$2"
   curl -fsSL "${BASE_URL}/${src}" -o "$dest"
@@ -14,19 +16,14 @@ download() {
 echo ""
 echo "Mentor Plugin — OpenCode Installer"
 echo ""
-echo "Install skills:"
-echo "  1) Global   — ~/.config/opencode/skills/"
-echo "  2) Project  — .opencode/skills/"
-echo ""
-read -rp "Choose [1/2]: " SCOPE
 
-case "$SCOPE" in
-  1) SKILLS_DEST="${HOME}/.config/opencode/skills"
-     CONFIG_FILE="${HOME}/.config/opencode/opencode.json" ;;
-  2) SKILLS_DEST="$(pwd)/.opencode/skills"
-     CONFIG_FILE="$(pwd)/opencode.json" ;;
-  *) echo "Invalid choice." >&2; exit 1 ;;
-esac
+if [ "$MODE" = "global" ]; then
+  SKILLS_DEST="${HOME}/.config/opencode/skills"
+  CONFIG_FILE="${HOME}/.config/opencode/opencode.json" ;
+else
+  SKILLS_DEST="$(pwd)/.opencode/skills"
+  CONFIG_FILE="$(pwd)/opencode.json"
+fi
 
 MCP_DEST="${HOME}/.config/opencode/agent-mentor/mcp-server.sh"
 
