@@ -6,8 +6,32 @@ on:
     tags: ["v*"]
 
 jobs:
+  tests:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ matrix.os }}-${{ hashFiles('mcp/sm2/Cargo.lock') }}
+          restore-keys: cargo-${{ matrix.os }}-
+
+      - name: Test
+        run: cargo test
+        working-directory: mcp/sm2
+
   # ── 1. Build Rust binaries ─────────────────────────────────────────────────
   build:
+    needs: tests
     name: Build (${{ matrix.artifact }})
     runs-on: ${{ matrix.os }}
     strategy:
