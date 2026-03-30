@@ -81,14 +81,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+          - os: ubuntu-latest
             artifact: mentor-mcp-linux-x86_64
-            binary: sm2
-          - target: aarch64-apple-darwin
-            os: macos-latest
+          - os: macos-latest
             artifact: mentor-mcp-darwin-arm64
-            binary: sm2
 
     steps:
       - uses: actions/checkout@v6
@@ -107,7 +103,7 @@ jobs:
           path: mcp/sm2
 
       - name: Test
-        run: cargo test --test e2e BINARY_PATH=${{ matrix.artifact }}
+        run: BINARY_PATH=${{ matrix.artifact }} cargo test --test e2e
         working-directory: mcp/sm2
 
   # ── 2. Release + publish plugin branch (tags only) ─────────────────────────
