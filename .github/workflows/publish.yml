@@ -103,7 +103,7 @@ jobs:
           path: mcp/sm2
 
       - name: Test
-        run: BINARY_PATH=${{ matrix.artifact }} cargo test --test e2e
+        run: BINARY_PATH=./${{ matrix.artifact }} cargo test --test e2e
         working-directory: mcp/sm2
 
   # ── 2. Release + publish plugin branch (tags only) ─────────────────────────

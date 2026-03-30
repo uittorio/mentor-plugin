@@ -1,4 +1,4 @@
-- WINDOWS support
 - readme to explain how it works, interactions agent mcp db
 - readme about db path
 - dashboard to see topics
+- WINDOWS support
