@@ -102,6 +102,10 @@ jobs:
           name: ${{ matrix.artifact }}
           path: mcp/sm2
 
+      - name: Make binary executable
+        run: chmod +x ${{ matrix.artifact }}
+        working-directory: mcp/sm2
+
       - name: Test
         run: BINARY_PATH=./${{ matrix.artifact }} cargo test --test e2e
         working-directory: mcp/sm2
