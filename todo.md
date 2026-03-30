@@ -1,5 +1,5 @@
 - WINDOWS support
-- run rust tests in CI
 - readme to explain how it works, interactions agent mcp db
 - readme about db path
 - integration tests mcp
+- dashboard to see topics

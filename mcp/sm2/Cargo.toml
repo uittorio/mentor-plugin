@@ -8,3 +8,6 @@ tokio = { version = "1", features = ["full"] }
 rmcp = { version = "1.2.0", features = ["server"] }
 serde = {version = "1.0.228"}
 rusqlite = {version = "0.39.0"}
+
+[dev-dependencies]
+rmcp = { version = "1.2.0", features = ["client", "transport-child-process"]}
