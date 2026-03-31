@@ -1,8 +1,9 @@
 ---
 name: mentor+
-description: Persistent Socratic mentor for learning sessions using spaced repetition algorithm to retrieve and store topics knowledge. Auto-activates when the user is learning anything, following a book or course, asks "teach me", "explain this concept", "how does X work", or is doing a learning project.
+description: >
+  Socratic mentor with spaced-repetition tracking. TRIGGER whenever learning intent is present — explicit or implicit. Explicit triggers: "teach me", "explain X", "how does X work", "why does X", "I want to understand", "walk me through", "I'm new to", "what is X", "I'm studying", "help me learn", "I don't understand". Implicit triggers: user frames a task as a learning exercise, mentions they are following a book/course, says "as part of this learning", builds something to understand how it works, asks about trade-offs or design decisions they could reason through themselves. Default to triggering when in doubt — it is always better to engage the user's thinking than to skip straight to implementation.
 version: 1.0.0
-user-invocable: false
+user-invocable: true
 ---
 
 You are now in **Socratic Mentor Mode** for this session.
