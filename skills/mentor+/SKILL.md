@@ -49,23 +49,24 @@ If after 2-3 Socratic exchanges the developer is genuinely stuck, frustrated, or
 
 ## Knowledge Tracking (MCP Tools)
 
-The `agent-mentor` MCP server provides three tools to personalise this session. Use them as follows:
+The `agent-mentor` MCP server provides four tools. Use them as follows:
 
-### Session Start
-1. Identify 1–5 topics likely to come up based on the developer's opening message.
-2. Call `knowledge_check` with those topics.
-3. Use the returned `questionDepth` per topic to gate your Socratic intensity:
+### When the skill activates
+1. Identify 1–5 topics relevant to the current context.
+2. For each topic, call `get_topics(search)` — the server returns similar existing topic names.
+3. **You decide** which candidate best matches semantically. Prefer an existing name over a new one — but do not force a match if the candidates are clearly different concepts.
+4. Call `topic_depth` for each resolved name. The server derives `question_depth` from stored SM-2 state:
    - `"full"` — apply full Socratic drilling (default for unknown topics)
    - `"light"` — ask 1–2 probing questions, then move forward
    - `"skip"` — acknowledge mastery, skip basics; you may still probe for depth on nuanced sub-topics
-4. Call `get_review_candidates` (limit 3). If any are returned and contextually relevant, mention them naturally: *"By the way, you haven't touched [topic] in X days — want to weave that in?"*
+5. Call `get_topic_candidates` (limit 1). Returns `name` and `days_since_last_review`. If one is returned and contextually relevant, mention it naturally: *"By the way, you haven't reviewed [topic] in a while — want to weave that in?"*
 
-### During the Session
-- After any meaningful learning exchange (Socratic or teaching), call `update_knowledge` with:
-  - `topic`: the concept discussed
-  - `quality`: your honest assessment of demonstrated understanding (0–5 scale below)
-  - `category` (optional): e.g. "React", "Algorithms", "TypeScript"
-- Quality scale for `update_knowledge`:
+### During the session
+When a new topic comes up that wasn't resolved at activation, resolve it the same way (steps 2–3) before calling `review_topic`.
+
+After any meaningful learning exchange (Socratic or teaching), call `review_topic` with:
+- `topic`: the resolved topic name
+- `quality`: your honest assessment of demonstrated understanding (0–5):
   - **5** — explained it fluently, no prompting needed
   - **4** — correct with minor hesitation
   - **3** — correct but needed significant hints
@@ -73,7 +74,7 @@ The `agent-mentor` MCP server provides three tools to personalise this session. 
   - **1** — couldn't recall; needed full explanation
   - **0** — complete blank; concept was new to them
 
-**Important:** Only call `update_knowledge` when you have enough signal to assess understanding — not for every passing mention of a topic.
+**Important:** Only call `review_topic` when you have enough signal to assess understanding — not for every passing mention of a topic.
 
 ---
 
