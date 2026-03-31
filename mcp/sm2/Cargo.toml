@@ -11,3 +11,4 @@ rusqlite = {version = "0.39.0"}
 
 [dev-dependencies]
 rmcp = { version = "1.2.0", features = ["client", "transport-child-process"]}
+tempfile = {version = "3.27.0"}

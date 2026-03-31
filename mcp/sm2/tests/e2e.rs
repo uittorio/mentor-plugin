@@ -5,6 +5,7 @@ use rmcp::transport::TokioChildProcess;
 
 use rmcp::{RoleClient, ServiceExt};
 use serde::Deserialize;
+use tempfile::TempDir;
 use tokio::process::Command;
 
 #[derive(Deserialize)]
@@ -19,19 +20,31 @@ pub struct TopicCandidate {
     pub days_since_last_review: u64,
 }
 
-async fn create_client() -> RunningService<RoleClient, ()> {
+struct TestClientWrapper {
+    client: RunningService<RoleClient, ()>,
+    _db_folder: TempDir,
+}
+
+async fn create_client() -> TestClientWrapper {
     let binary = std::env::var("BINARY_PATH").unwrap_or("target/release/sm2".to_string());
 
-    let command = Command::new(binary);
+    let mut command = Command::new(binary);
+    let tmp = TempDir::new().unwrap();
+    command.env("AGENT_MENTOR_DB_FOLDER", tmp.path());
+
     let process = TokioChildProcess::new(command).unwrap();
-    ().serve(process).await.unwrap()
+    let client = ().serve(process).await.unwrap();
+    TestClientWrapper {
+        client,
+        _db_folder: tmp,
+    }
 }
 
 #[tokio::test]
 async fn list_tools() {
     let client = create_client().await;
 
-    let results = client.list_all_tools().await.unwrap();
+    let results = client.client.list_all_tools().await.unwrap();
 
     let mut names = results.iter().map(|t| &t.name).collect::<Vec<_>>();
 
@@ -48,12 +61,9 @@ async fn list_tools() {
     assert_eq!(names, expected);
 }
 
-async fn call_tool(
-    client: &RunningService<RoleClient, ()>,
-    tool_name: String,
-    v: &Value,
-) -> CallToolResult {
+async fn call_tool(client: &TestClientWrapper, tool_name: String, v: &Value) -> CallToolResult {
     client
+        .client
         .call_tool(
             CallToolRequestParams::new(tool_name).with_arguments(v.as_object().unwrap().clone()),
         )
