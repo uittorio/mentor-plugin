@@ -5,6 +5,7 @@ Releases are distributed via dedicated branches — see [Release Strategy](./REL
 ---
 
 ## OpenCode
+The install plugin will copy the nececessary files from the release branch in your opencode project. You can either install it globally or local to your project. I advise to install it in your current project first.
 
 ### Global config (`~/.config/opencode/`)
 ```bash
@@ -42,22 +43,28 @@ Claude Code handles updates automatically. Run `/marketplace`, find the plugin, 
 
 # Uninstall
 
-## All coding agents
+## Claude Code
 
-Remove the downloaded binary:
+Remove the plugin:
+```
+/plugin uninstall mentor-plugin
+```
+
+Remove the binary and knowledge database:
 ```bash
 rm -f ~/.local/bin/mentor-mcp-*
+rm -rf ~/.local/share/agent-mentor
 ```
 
 ## OpenCode
 
-Remove the skills from wherever you installed them (global or project):
+Remove the skill:
 ```bash
-# global
-rm -rf  ~/.config/opencode/skills/mentor+
-
-# project
+# local
 rm -rf .opencode/skills/mentor+
+
+# global
+rm -rf ~/.config/opencode/skills/mentor+
 ```
 
 Remove the MCP server script:
@@ -65,10 +72,44 @@ Remove the MCP server script:
 rm -rf ~/.config/opencode/agent-mentor
 ```
 
-Then remove the `agent-mentor` entry from your `opencode.json` (global or project).
+Remove the `agent-mentor` entry from your `opencode.json` (local or global).
 
-## Claude Code
+Remove the binary and knowledge database:
+```bash
+rm -f ~/.local/bin/mentor-mcp-*
+rm -rf ~/.local/share/agent-mentor
+```
 
-```
-/plugin uninstall mentor-plugin
-```
+## What gets installed and where
+
+### Claude Code
+
+Managed by the Claude Code plugin system. Files land wherever Claude Code stores the plugin, plus two shared locations written on first use:
+
+| File | Destination |
+|------|-------------|
+| `SKILL.md` | inside the Claude Code plugin directory |
+| `.mcp.json` | inside the Claude Code plugin directory |
+| `mcp-server.sh` | inside the Claude Code plugin directory |
+| MCP binary (downloaded on first run) | `~/.local/bin/mentor-mcp-<version>` |
+| Knowledge database (created on first run) | `~/.local/share/agent-mentor/knowledge.db` |
+
+### OpenCode — local install
+
+| File | Destination |
+|------|-------------|
+| `SKILL.md` | `.opencode/skills/mentor+/SKILL.md` |
+| `mcp-server.sh` | `~/.config/opencode/agent-mentor/mcp-server.sh` |
+| MCP config entry | added to `./opencode.json` |
+| MCP binary (downloaded on first run) | `~/.local/bin/mentor-mcp-<version>` |
+| Knowledge database (created on first run) | `~/.local/share/agent-mentor/knowledge.db` |
+
+### OpenCode — global install
+
+| File | Destination |
+|------|-------------|
+| `SKILL.md` | `~/.config/opencode/skills/mentor+/SKILL.md` |
+| `mcp-server.sh` | `~/.config/opencode/agent-mentor/mcp-server.sh` |
+| MCP config entry | added to `~/.config/opencode/opencode.json` |
+| MCP binary (downloaded on first run) | `~/.local/bin/mentor-mcp-<version>` |
+| Knowledge database (created on first run) | `~/.local/share/agent-mentor/knowledge.db` |
