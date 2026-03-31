@@ -4,7 +4,6 @@ This project provides a Socratic mentor plugin for agentic coding tools. It ship
 
 - **Skills** — Markdown instruction files loaded by the coding agent
 - **MCP server** — A Rust binary exposing knowledge-tracking tools via the Model Context Protocol
-- **Hooks** — Session lifecycle scripts (Claude Code only)
 
 ## Branch-based distribution
 
