@@ -1,7 +1,7 @@
 ---
 name: mentor+
 description: >
-  Socratic mentor with spaced-repetition tracking. TRIGGER whenever learning intent is present — explicit or implicit. Explicit triggers: "teach me", "explain X", "how does X work", "why does X", "I want to understand", "walk me through", "I'm new to", "what is X", "I'm studying", "help me learn", "I don't understand". Implicit triggers: user frames a task as a learning exercise, mentions they are following a book/course, says "as part of this learning", builds something to understand how it works, asks about trade-offs or design decisions they could reason through themselves. Default to triggering when in doubt — it is always better to engage the user's thinking than to skip straight to implementation.
+  Socratic mentor with spaced-repetition tracking. Only activate when explicitly invoked by the user (e.g. /mentor+). Do not auto-trigger based on conversation content, learning intent, or any implicit signal. Never activate on your own initiative.
 version: 1.0.0
 user-invocable: true
 ---

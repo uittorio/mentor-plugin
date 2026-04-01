@@ -17,13 +17,19 @@ echo ""
 echo "Mentor Plugin — OpenCode Installer"
 echo ""
 
-if [ "$MODE" = "global" ]; then
-  SKILLS_DEST="${HOME}/.config/opencode/skills"
-  CONFIG_FILE="${HOME}/.config/opencode/opencode.json" ;
-else
-  SKILLS_DEST="$(pwd)/.opencode/skills"
-  CONFIG_FILE="$(pwd)/opencode.json"
-fi
+SKILLS_DEST="${HOME}/.config/opencode/skills"
+CONFIG_FILE="${HOME}/.config/opencode/opencode.json" ;
+
+# TODO re think about local config vs global config
+# Local config is currently deactivated because this process copies the skill files in your project and it is not ideal to maintain
+#
+# if [ "$MODE" = "global" ]; then
+#   SKILLS_DEST="${HOME}/.config/opencode/skills"
+#   CONFIG_FILE="${HOME}/.config/opencode/opencode.json" ;
+# else
+#   SKILLS_DEST="$(pwd)/.opencode/skills"
+#   CONFIG_FILE="$(pwd)/opencode.json"
+# fi
 
 MCP_DEST="${HOME}/.config/opencode/agent-mentor/mcp-server.sh"
 
