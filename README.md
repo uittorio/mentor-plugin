@@ -56,7 +56,15 @@ Both macOS and Linux are supported.
 
 ## Usage
 
-No invocation needed — mentor mode activates automatically when the agent detects you are learning something. Just start working.
+### Claude
+Just use this command to start the session
+```/mentor+```
+
+### Opencode
+Search for skills
+```/skills```
+
+Select mentor+
 
 ---
 

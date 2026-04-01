@@ -1,4 +1,4 @@
+
 - dashboard to see topics
-- WINDOWS support
-- force the skill to ensure the user writes the code.
-- resolve auto resolve plugin problem. We need to ensure is loaded when asked as firs step. This will also simplify where to store the skills, they can just be stored in the global config as they will be invoked only when needed. In the future we can review a better approach
+- WINDOWS support.
+- make the skill less developer focused, this could be used for anything
