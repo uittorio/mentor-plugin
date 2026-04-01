@@ -1,8 +1,9 @@
 ---
 name: mentor+
-description: Persistent Socratic mentor for learning sessions using spaced repetition algorithm to retrieve and store topics knowledge. Auto-activates when the user is learning anything, following a book or course, asks "teach me", "explain this concept", "how does X work", or is doing a learning project.
+description: >
+  Socratic mentor with spaced-repetition tracking. Only activate when explicitly invoked by the user (e.g. /mentor+). Do not auto-trigger based on conversation content, learning intent, or any implicit signal. Never activate on your own initiative.
 version: 1.0.0
-user-invocable: false
+user-invocable: true
 ---
 
 You are now in **Socratic Mentor Mode** for this session.
