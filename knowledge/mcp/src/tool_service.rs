@@ -1,5 +1,3 @@
-use std::time::SystemTimeError;
-
 use rmcp::{
     ServerHandler,
     handler::server::{tool::ToolRouter, wrapper::Parameters},
@@ -7,15 +5,15 @@ use rmcp::{
     serde_json::{self},
     tool, tool_handler, tool_router,
 };
+use std::time::SystemTimeError;
+use topic::topic_storage::TopicStorage;
+use topic::{QuestionDepth, Topic};
 
 use crate::{
-    tools::{
-        review_topic::{ReviewTopicParams, ReviewTopicResult},
-        topic_candidates::{TopicCandidate, TopicCandidatesParams},
-        topic_depth::{TopicDepthParams, TopicDepthResult},
-        topics::TopicsParams,
-    },
-    topic::{Topic, TopicStorage},
+    review_topic::{ReviewTopicParams, ReviewTopicResult},
+    topic_candidates::{TopicCandidate, TopicCandidatesParams},
+    topic_depth::{TopicDepthParams, TopicDepthResult},
+    get_topics::GetTopicsParams,
 };
 
 pub struct ToolService {
@@ -45,7 +43,7 @@ impl ToolService {
     #[tool(
         description = "Search for existing topic names similar to a search string using trigram similarity. Returns topic names ranked by similarity."
     )]
-    async fn get_topics(&self, params: Parameters<TopicsParams>) -> Result<String, String> {
+    async fn get_topics(&self, params: Parameters<GetTopicsParams>) -> Result<String, String> {
         let topics = self.topic_storage.get_all().map_err(|e| e.to_string())?;
         let topic_names = topics
             .into_iter()
@@ -56,7 +54,9 @@ impl ToolService {
         serde_json::to_string(&topic_names).map_err(|e| e.to_string())
     }
 
-    #[tool(description = "Returns the recommended question depth (full/light/skip) for a single topic. Call once per topic after resolving the canonical name with get_topics.")]
+    #[tool(
+        description = "Returns the recommended question depth (full/light/skip) for a single topic. Call once per topic after resolving the canonical name with get_topics."
+    )]
     async fn topic_depth(&self, params: Parameters<TopicDepthParams>) -> Result<String, String> {
         let topic_name = normalise_topic(&params.0.topic);
         let topic = self
@@ -71,7 +71,7 @@ impl ToolService {
             },
             None => TopicDepthResult {
                 name: topic_name.to_string(),
-                question_depth: crate::topic::QuestionDepth::Full,
+                question_depth: QuestionDepth::Full,
             },
         };
 

@@ -26,7 +26,7 @@ struct TestClientWrapper {
 }
 
 async fn create_client() -> TestClientWrapper {
-    let binary = std::env::var("BINARY_PATH").unwrap_or("target/release/sm2".to_string());
+    let binary = std::env::var("BINARY_PATH").unwrap_or("../target/release/mcp".to_string());
 
     let mut command = Command::new(binary);
     let tmp = TempDir::new().unwrap();

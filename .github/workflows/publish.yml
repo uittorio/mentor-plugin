@@ -22,12 +22,12 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ matrix.os }}-${{ hashFiles('mcp/sm2/Cargo.lock') }}
+          key: cargo-${{ matrix.os }}-${{ hashFiles('knowledge/Cargo.lock') }}
           restore-keys: cargo-${{ matrix.os }}-
 
       - name: Test
-        run: cargo test --bins
-        working-directory: mcp/sm2
+        run: cargo test --lib --bins
+        working-directory: knowledge
 
   # ── 1. Build Rust binaries ─────────────────────────────────────────────────
   build:
@@ -41,11 +41,11 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             artifact: mentor-mcp-linux-x86_64
-            binary: sm2
+            binary: mcp
           - target: aarch64-apple-darwin
             os: macos-latest
             artifact: mentor-mcp-darwin-arm64
-            binary: sm2
+            binary: mcp
 
     steps:
       - uses: actions/checkout@v6
@@ -58,16 +58,16 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            mcp/sm2/target
-          key: cargo-${{ matrix.target }}-${{ hashFiles('mcp/sm2/Cargo.lock') }}
+            knowledge/target
+          key: cargo-${{ matrix.target }}-${{ hashFiles('knowledge/Cargo.lock') }}
           restore-keys: cargo-${{ matrix.target }}-
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
-        working-directory: mcp/sm2
+        working-directory: knowledge
 
       - name: Rename binary
-        run: cp mcp/sm2/target/${{ matrix.target }}/release/${{ matrix.binary }} ${{ matrix.artifact }}
+        run: cp knowledge/target/${{ matrix.target }}/release/${{ matrix.binary }} ${{ matrix.artifact }}
 
       - uses: actions/upload-artifact@v6
         with:
@@ -94,21 +94,21 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ matrix.os }}-${{ hashFiles('mcp/sm2/Cargo.lock') }}
+          key: cargo-${{ matrix.os }}-${{ hashFiles('knowledge/Cargo.lock') }}
           restore-keys: cargo-${{ matrix.os }}-
 
       - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.artifact }}
-          path: mcp/sm2
+          path: knowledge
 
       - name: Make binary executable
         run: chmod +x ${{ matrix.artifact }}
-        working-directory: mcp/sm2
+        working-directory: knowledge
 
       - name: Test
-        run: BINARY_PATH=./${{ matrix.artifact }} cargo test --test e2e
-        working-directory: mcp/sm2
+        run: BINARY_PATH=../${{ matrix.artifact }} cargo test --test e2e
+        working-directory: knowledge
 
   # ── 2. Release + publish plugin branch (tags only) ─────────────────────────
   publish:

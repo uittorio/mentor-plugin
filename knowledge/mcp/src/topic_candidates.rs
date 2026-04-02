@@ -1,7 +1,7 @@
 use rmcp::schemars;
 use serde::{Deserialize, Serialize};
 
-use crate::tools::deserialisers::deserialize_usize;
+use crate::deserialisers::deserialize_usize;
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct TopicCandidatesParams {

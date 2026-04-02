@@ -1,6 +1,5 @@
 use rmcp::schemars;
-
-use crate::topic::QuestionDepth;
+use topic::QuestionDepth;
 
 #[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
 pub struct TopicDepthParams {

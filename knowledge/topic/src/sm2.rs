@@ -1,4 +1,4 @@
-use crate::topic::Topic;
+use crate::Topic;
 
 // - Quality 5 → Ease factor increases
 // - Quality 4 → Ease factor stays the same

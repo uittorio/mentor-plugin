@@ -1,8 +1,11 @@
-use std::error::Error;
-
+use crate::sm2::sm2;
+use crate::trigram_similarity::trigram_similarity;
 use serde::Serialize;
 
-use crate::{sm2::sm2, trigram_similarity::trigram_similarity};
+mod sm2;
+pub mod sqlite_topic_storage;
+pub mod topic_storage;
+pub mod trigram_similarity;
 
 pub struct Topic {
     pub name: String,
@@ -18,13 +21,6 @@ pub struct Topic {
     pub reviewed_at: u64,
 }
 
-pub trait TopicStorage {
-    fn get_overdue(&self, now: u64) -> Result<Vec<Topic>, Box<dyn Error>>;
-    fn get_all(&self) -> Result<Vec<Topic>, Box<dyn Error>>;
-    fn get(&self, topic: &str) -> Result<Option<Topic>, Box<dyn Error>>;
-    fn upsert(&self, topic: &Topic) -> Result<(), Box<dyn Error>>;
-}
-
 impl Topic {
     pub fn question_depth(&self) -> QuestionDepth {
         match (self.ease_factor, self.repetitions) {
@@ -36,7 +32,7 @@ impl Topic {
     }
 
     pub fn is_similar(&self, value: &str) -> bool {
-        return trigram_similarity(value, &self.name) >= 0.2;
+        trigram_similarity(value, &self.name) >= 0.2
     }
 
     pub fn update_quality(&self, quality: u32, review_date: u64) -> Topic {

@@ -1,13 +1,13 @@
 [package]
-name = "sm2"
-version = "0.0.18"
+name = "mcp"
+version.workspace = true
 edition = "2024"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 rmcp = { version = "1.2.0", features = ["server"] }
 serde = {version = "1.0.228"}
-rusqlite = {version = "0.39.0"}
+topic = { path = "../topic" }
 
 [dev-dependencies]
 rmcp = { version = "1.2.0", features = ["client", "transport-child-process"]}
