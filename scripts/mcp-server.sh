@@ -18,7 +18,7 @@ else
   [[ "$ARCH" == "aarch64" ]] && ARCH="arm64"
 
   VAR="ARTIFACT_${OS}_${ARCH}"
-  ARTIFACT="${VAR}"
+  ARTIFACT="${!VAR:-}"
 
   if [ -z "$ARTIFACT" ]; then
     echo "Unsupported platform: ${OS}-${ARCH}" >&2
