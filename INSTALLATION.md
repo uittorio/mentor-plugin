@@ -4,12 +4,14 @@ Releases are distributed via dedicated branches — see [Release Strategy](./REL
 
 ---
 
+# Plugin
+
 ## OpenCode
 The install plugin will copy the nececessary files from the release branch in your opencode configuration folder
 
 ### Global config (`~/.config/opencode/`)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/opencode-plugin-release/install.sh | bash -s global
+curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/opencode-plugin-release/install.sh | bash
 ```
 
 ## Claude Code
@@ -47,7 +49,7 @@ Remove the plugin:
 
 Remove the binary and knowledge database:
 ```bash
-rm -f ~/.local/bin/mentor-mcp-*
+rm -f ~/.local/bin/mentor-mcp
 rm -rf ~/.local/share/agent-mentor
 ```
 
@@ -68,7 +70,7 @@ Remove the `agent-mentor` entry from your `opencode.json`
 
 Remove the binary and knowledge database:
 ```bash
-rm -f ~/.local/bin/mentor-mcp-*
+rm -f ~/.local/bin/mentor-mcp
 rm -rf ~/.local/share/agent-mentor
 ```
 
@@ -83,7 +85,7 @@ Managed by the Claude Code plugin system. Files land wherever Claude Code stores
 | `SKILL.md` | inside the Claude Code plugin directory |
 | `.mcp.json` | inside the Claude Code plugin directory |
 | `mcp-server.sh` | inside the Claude Code plugin directory |
-| MCP binary (downloaded on first run) | `~/.local/bin/mentor-mcp-<version>` |
+| MCP binary (downloaded on first run) | `~/.local/bin/mentor-mcp` |
 | Knowledge database (created on first run) | `~/.local/share/agent-mentor/knowledge.db` |
 
 ### OpenCode
@@ -93,5 +95,29 @@ Managed by the Claude Code plugin system. Files land wherever Claude Code stores
 | `SKILL.md` | `~/.config/opencode/skills/mentor+/SKILL.md` |
 | `mcp-server.sh` | `~/.config/opencode/agent-mentor/mcp-server.sh` |
 | MCP config entry | added to `~/.config/opencode/opencode.json` |
-| MCP binary (downloaded on first run) | `~/.local/bin/mentor-mcp-<version>` |
+| MCP binary (downloaded on first run) | `~/.local/bin/mentor-mcp` |
 | Knowledge database (created on first run) | `~/.local/share/agent-mentor/knowledge.db` |
+
+
+# Dashboard
+
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/main/install-dashboard.sh | bash
+```
+
+Add ~/.local/bin to your PATH
+
+## What gets installed and where
+
+| File | Destination |
+|------|-------------|
+| Dashboard binary (downloaded on first run) | `~/.local/bin/mentor-dashboard` |
+
+# Uninstall
+
+Remove the mentor dashboard binary:
+```bash
+rm -f ~/.local/bin/mentor-dashboard
+```

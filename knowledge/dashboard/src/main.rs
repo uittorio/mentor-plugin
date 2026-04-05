@@ -1,3 +1,4 @@
+use std::env::Args;
 use std::{
     io::Stdout,
     time::{Duration, Instant},
@@ -15,6 +16,13 @@ use ratatui::{
 use topic::{Topic, sqlite_topic_storage::SqliteTopicStorage, topic_storage::TopicStorage};
 
 fn main() -> color_eyre::Result<()> {
+    let mut args = std::env::args();
+
+    if has_version_argument(&mut args) {
+        print_version();
+        return Ok(());
+    }
+
     color_eyre::install()?;
     let mut terminal = ratatui::init();
     app(&mut terminal)?;
@@ -104,4 +112,13 @@ fn render(frame: &mut Frame, topics: &Vec<Topic>) {
     )
     .header(header);
     frame.render_widget(t, frame.area());
+}
+
+fn has_version_argument(args: &mut Args) -> bool {
+    return args.any(|a| a == "--version" || a == "-v");
+}
+
+fn print_version() -> () {
+    let version = env!("CARGO_PKG_VERSION");
+    println!("{}", version);
 }
