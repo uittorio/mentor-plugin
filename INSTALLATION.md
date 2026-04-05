@@ -104,7 +104,7 @@ Managed by the Claude Code plugin system. Files land wherever Claude Code stores
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/main/install-dashboard.sh | bash
+curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/main/scripts/install-dashboard.sh | bash
 ```
 
 Add ~/.local/bin to your PATH

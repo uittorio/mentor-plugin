@@ -66,6 +66,13 @@ Search for skills
 
 Select mentor+
 
+
+## Dashboard 
+You can also visualise your historical topics to see your progress.
+
+See [Installation](./INSTALLATION.md#dashboard) for more details
+
+![dashboard](./images/dashboard.png)
 ---
 
 ## License
