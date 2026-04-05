@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # VERSION is set locally by scripts/release.sh before tagging.
-VERSION="v0.0.21"
+VERSION="v0.0.22"
 REPO="uittorio/mentor-plugin"
 
 # Supported artifacts — add new platforms here
@@ -18,7 +18,7 @@ else
   [[ "$ARCH" == "aarch64" ]] && ARCH="arm64"
 
   VAR="ARTIFACT_${OS}_${ARCH}"
-  ARTIFACT="${VAR}"
+  ARTIFACT="${!VAR:-}"
 
   if [ -z "$ARTIFACT" ]; then
     echo "Unsupported platform: ${OS}-${ARCH}" >&2
