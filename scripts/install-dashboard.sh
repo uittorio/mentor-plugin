@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # VERSION is set locally by scripts/release.sh before tagging.
-VERSION="v0.0.22"
+VERSION="0.0.22"
 REPO="uittorio/mentor-plugin"
 
 BINARY="${HOME}/.local/bin/mentor-dashboard"
@@ -27,9 +27,8 @@ else
 
   mkdir -p "${HOME}/.local/bin"
   echo "Downloading mentor-dashboard ${VERSION} for ${OS}-${ARCH}..." >&2
-  echo "https://github.com/${REPO}/releases/download/${VERSION}/${ARTIFACT}"
   curl -fsSL \
-    "https://github.com/${REPO}/releases/download/${VERSION}/${ARTIFACT}" \
+    "https://github.com/${REPO}/releases/download/v${VERSION}/${ARTIFACT}" \
     -o "$BINARY"
   chmod +x "$BINARY"
 fi
