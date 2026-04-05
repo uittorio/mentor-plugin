@@ -5,8 +5,6 @@ REPO="uittorio/mentor-plugin"
 BRANCH="opencode-plugin-release"
 BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 
-MODE="${1:-}"
-
 download() {
   local src="$1" dest="$2"
   curl -fsSL "${BASE_URL}/${src}" -o "$dest"
@@ -18,18 +16,7 @@ echo "Mentor Plugin — OpenCode Installer"
 echo ""
 
 SKILLS_DEST="${HOME}/.config/opencode/skills"
-CONFIG_FILE="${HOME}/.config/opencode/opencode.json" ;
-
-# TODO re think about local config vs global config
-# Local config is currently deactivated because this process copies the skill files in your project and it is not ideal to maintain
-#
-# if [ "$MODE" = "global" ]; then
-#   SKILLS_DEST="${HOME}/.config/opencode/skills"
-#   CONFIG_FILE="${HOME}/.config/opencode/opencode.json" ;
-# else
-#   SKILLS_DEST="$(pwd)/.opencode/skills"
-#   CONFIG_FILE="$(pwd)/opencode.json"
-# fi
+CONFIG_FILE="${HOME}/.config/opencode/opencode.json"
 
 MCP_DEST="${HOME}/.config/opencode/agent-mentor/mcp-server.sh"
 
