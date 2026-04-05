@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # VERSION is set locally by scripts/release.sh before tagging.
-VERSION="v0.0.19"
+VERSION="v0.0.20"
 REPO="uittorio/mentor-plugin"
 
 BINARY="${HOME}/.local/bin/mentor-dashboard"
