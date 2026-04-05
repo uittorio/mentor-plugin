@@ -32,7 +32,7 @@ jobs:
   # ── 1. Build Rust binaries ─────────────────────────────────────────────────
   build:
     needs: tests
-    name: Build for (${{ matrix.os }})
+    name: Build binaries (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -90,7 +90,7 @@ jobs:
 
   e2e_tests:
     needs: build
-    name: E2e Test (${{ matrix.os }})
+    name: E2E Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
