@@ -1,0 +1,15 @@
+[package]
+name = "dashboard"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+topic = { path = "../topic" }
+ratatui = "0.30.0"
+color-eyre = "0.6.3"
+crossterm = "0.29.0"
+chrono = "0.4.44"
+
+[[bin]]
+name = "mentor-dashboard"
+path = "src/main.rs"

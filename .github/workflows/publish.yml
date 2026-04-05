@@ -40,12 +40,16 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            artifact: mentor-mcp-linux-x86_64
-            binary: mcp
+            mcp_artifact: mentor-mcp-linux-x86_64
+            mcp_binary: mcp
+            dashboard_artifact: mentor-dashboard-linux-x86_64
+            dashboard_binary: dashboard
           - target: aarch64-apple-darwin
             os: macos-latest
-            artifact: mentor-mcp-darwin-arm64
-            binary: mcp
+            mcp_artifact: mentor-mcp-darwin-arm64
+            mcp_binary: mcp
+            dashboard_artifact: mentor-dashboard-darwin-arm64
+            dashboard_binary: dashboard
 
     steps:
       - uses: actions/checkout@v6
@@ -66,13 +70,23 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
         working-directory: knowledge
 
-      - name: Rename binary
-        run: cp knowledge/target/${{ matrix.target }}/release/${{ matrix.binary }} ${{ matrix.artifact }}
+      - name: Rename mcp binary
+        run: cp knowledge/target/${{ matrix.target }}/release/${{ matrix.mcp_binary }} ${{ matrix.mcp_artifact }}
+
+      - name: Rename dashboard binary
+        run: cp knowledge/target/${{ matrix.target }}/release/${{ matrix.dashboard_binary }} ${{ matrix.dashboard_artifact }}
 
       - uses: actions/upload-artifact@v6
+        name: Upload mcp artifact
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
+          name: ${{ matrix.mcp_artifact }}
+          path: ${{ matrix.mcp_artifact }}
+
+      - uses: actions/upload-artifact@v6
+        name: Upload dashboard artifact
+        with:
+          name: ${{ matrix.dashboard_artifact }}
+          path: ${{ matrix.dashboard_artifact }}
 
   e2e_tests:
     needs: build

@@ -1,6 +1,9 @@
-use std::{error::Error, path::Path, sync::Mutex};
+use std::{path::Path, sync::Mutex};
 
-use crate::{Topic, topic_storage::TopicStorage};
+use crate::{
+    Topic,
+    topic_storage::{TopicStorage, TopicStorageError},
+};
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 pub struct SqliteTopicStorage(Mutex<Connection>);
@@ -23,14 +26,14 @@ fn db_path() -> std::io::Result<String> {
 
 impl SqliteTopicStorage {
     #[cfg(test)]
-    pub fn init_inmemory() -> Result<Self, Box<dyn Error>> {
+    pub fn init_inmemory() -> Result<Self, TopicStorageError> {
         let connection = Connection::open_in_memory()?;
         let storage = SqliteTopicStorage(Mutex::new(connection));
         storage.create_tables()?;
         Ok(storage)
     }
 
-    pub fn init() -> Result<Self, Box<dyn Error>> {
+    pub fn init() -> Result<Self, TopicStorageError> {
         let path = db_path()?;
         let connection = Connection::open(path)?;
         let storage = SqliteTopicStorage(Mutex::new(connection));
@@ -69,7 +72,7 @@ impl SqliteTopicStorage {
 }
 
 impl TopicStorage for SqliteTopicStorage {
-    fn get_overdue(&self, now: u64) -> Result<Vec<Topic>, Box<dyn Error>> {
+    fn get_overdue(&self, now: u64) -> Result<Vec<Topic>, TopicStorageError> {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
@@ -87,7 +90,7 @@ impl TopicStorage for SqliteTopicStorage {
         Ok(topics)
     }
 
-    fn get_all(&self) -> Result<Vec<Topic>, Box<dyn Error>> {
+    fn get_all(&self) -> Result<Vec<Topic>, TopicStorageError> {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
@@ -103,7 +106,7 @@ impl TopicStorage for SqliteTopicStorage {
         Ok(topics)
     }
 
-    fn get(&self, topic: &str) -> Result<Option<Topic>, Box<dyn Error>> {
+    fn get(&self, topic: &str) -> Result<Option<Topic>, TopicStorageError> {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
@@ -120,7 +123,7 @@ impl TopicStorage for SqliteTopicStorage {
         Ok(topic)
     }
 
-    fn upsert(&self, topic: &Topic) -> Result<(), Box<dyn Error>> {
+    fn upsert(&self, topic: &Topic) -> Result<(), TopicStorageError> {
         let conn = self.0.lock().unwrap();
 
         conn.execute(
@@ -143,6 +146,23 @@ impl TopicStorage for SqliteTopicStorage {
         )?;
 
         Ok(())
+    }
+}
+
+impl From<std::io::Error> for TopicStorageError {
+    fn from(value: std::io::Error) -> Self {
+        TopicStorageError {
+            message: "TopicStorageError stdio error".to_string(),
+            source: Some(Box::new(value)),
+        }
+    }
+}
+impl From<rusqlite::Error> for TopicStorageError {
+    fn from(value: rusqlite::Error) -> Self {
+        TopicStorageError {
+            message: "TopicStorageError sqlite error".to_string(),
+            source: Some(Box::new(value)),
+        }
     }
 }
 

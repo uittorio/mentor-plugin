@@ -7,16 +7,18 @@ REPO="uittorio/mentor-plugin"
 ARTIFACT_linux_x86_64="mentor-mcp-linux-x86_64"
 ARTIFACT_darwin_arm64="mentor-mcp-darwin-arm64"
 
-BINARY="${HOME}/.local/bin/mentor-mcp-${VERSION}"
+BINARY="${HOME}/.local/bin/mentor-mcp"
 
-if [ ! -f "$BINARY" ]; then
+if [ -f "$BINARY" ] && [ "$($BINARY --version)" = "$VERSION" ]; then
+    echo "Already up to date"
+else
   OS=$(uname -s | tr '[:upper:]' '[:lower:]')
   ARCH=$(uname -m)
   # Normalise aarch64 → arm64
   [[ "$ARCH" == "aarch64" ]] && ARCH="arm64"
 
   VAR="ARTIFACT_${OS}_${ARCH}"
-  ARTIFACT="${!VAR:-}"
+  ARTIFACT="${VAR}"
 
   if [ -z "$ARTIFACT" ]; then
     echo "Unsupported platform: ${OS}-${ARCH}" >&2
