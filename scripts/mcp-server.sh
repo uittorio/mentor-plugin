@@ -10,7 +10,7 @@ ARTIFACT_darwin_arm64="mentor-mcp-darwin-arm64"
 BINARY="${HOME}/.local/bin/mentor-mcp"
 
 if [ -f "$BINARY" ] && [ "$($BINARY --version)" = "$VERSION" ]; then
-    echo "Already up to date"
+    echo "Already up to date" >&2
 else
   OS=$(uname -s | tr '[:upper:]' '[:lower:]')
   ARCH=$(uname -m)

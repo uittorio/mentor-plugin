@@ -10,7 +10,7 @@ ARTIFACT_linux_x86_64="mentor-dashboard-linux-x86_64"
 ARTIFACT_darwin_arm64="mentor-dashboard-darwin-arm64"
 
 if [ -f "$BINARY" ] && [ "$($BINARY --version)" = "$VERSION" ]; then
-    echo "Already up to date"
+    echo "Already up to date" >&2
 else
   OS=$(uname -s | tr '[:upper:]' '[:lower:]')
   ARCH=$(uname -m)
@@ -33,4 +33,4 @@ else
   chmod +x "$BINARY"
 fi
 
-echo "ensure ~/.local/bin is on your PATH"
+echo "ensure ~/.local/bin is on your PATH" >&2
