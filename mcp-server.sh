@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # VERSION is set locally by scripts/release.sh before tagging.
-VERSION="0.0.23"
+VERSION="0.0.24"
 REPO="uittorio/mentor-plugin"
 
 # Supported artifacts — add new platforms here
@@ -10,7 +10,7 @@ ARTIFACT_darwin_arm64="mentor-mcp-darwin-arm64"
 BINARY="${HOME}/.local/bin/mentor-mcp"
 
 if [ -f "$BINARY" ] && [ "$($BINARY --version)" = "$VERSION" ]; then
-    echo "Already up to date"
+    echo "Already up to date" >&2
 else
   OS=$(uname -s | tr '[:upper:]' '[:lower:]')
   ARCH=$(uname -m)
