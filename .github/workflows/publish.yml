@@ -194,8 +194,8 @@ jobs:
           git commit -m "chore: publish plugin ${GITHUB_REF_NAME}"
           git push origin opencode-plugin-release
 
-  opencode_tests:
-    name: Tests open code installation
+  installation_tests:
+    name: Test installation
     needs: publish
     runs-on: ubuntu-latest
     steps:
@@ -203,9 +203,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Test
+      - name: Open code Test
         run: |
           ./tests_installs/opencode_install_tests.sh
+        env:
+          GITHUB_REF: ${{ github.ref }}
 
+      - name: Dashboard Test
+        run: |
+          ./tests_installs/dashboard_install_tests.sh
         env:
           GITHUB_REF: ${{ github.ref }}
