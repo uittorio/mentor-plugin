@@ -75,6 +75,11 @@ See [Installation](./INSTALLATION.md#dashboard) for more details
 ![dashboard](./images/dashboard.png)
 ---
 
+
+## Developer
+Documentation about how this project works internally
+[Developer](./DEVELOPER.md)
+
 ## License
 
 MIT
