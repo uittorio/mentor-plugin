@@ -92,10 +92,16 @@ Allow someone else to go through a *similar* learning journey — not an identic
 
 ### Replay Engine Design
 
-The session tree acts as a **curriculum template**:
-1. For each root topic node, generate a new Socratic question of the same `question_type`
-2. Use quality score to decide traversal: high quality → skip children; low quality → drill into children
-3. Emergent topics are presented as additional curriculum items, not triggered organically (trade-off: some naturalness is lost)
+The MCP server acts as a **traversal state machine** — the LLM drives the conversation, the MCP drives the tree:
+
+1. LLM calls `start_replay(session_id)` → MCP loads the session summary (for context) and returns the first node `{ topic, question_type }`
+2. LLM generates a Socratic question based on `question_type` and `topic`, presents it to the learner
+3. LLM assesses the learner's response, calls `next_node(session_id, node_id, quality_score)` → MCP uses quality to decide traversal (high → skip children, low → drill deeper) and returns the next node
+4. Repeat until tree is exhausted
+
+**MCP state between calls:** `session_id` + `current_node_id` — enough to reconstruct position in the tree.
+
+Emergent topics are presented as additional curriculum items after the planned tree is exhausted.
 
 ### Privacy & Abstraction
 
@@ -128,9 +134,42 @@ No sessions data yet — that requires schema extension.
 
 ---
 
+## Session Schema (Designed, Not Yet Built)
+
+### `sessions` table
+| Field | Description |
+|---|---|
+| `id` | Primary key |
+| `started_at` | Unix timestamp |
+| `ended_at` | Unix timestamp (null until finalised) |
+| `title` | Short description for display |
+| `private_summary` | Full narrative with real context (md file path or text) |
+| `public_summary` | AI-abstracted version safe to publish |
+| `published` | Whether discoverable by others |
+
+### `session_nodes` table
+| Field | Description |
+|---|---|
+| `id` | Primary key |
+| `session_id` | FK to sessions |
+| `topic_name` | Topic covered |
+| `question_type` | clarifying / probing_assumptions / probing_reasoning / implications / alternatives |
+| `quality_score` | 0–5 SM-2 quality |
+| `emergent` | true if learner introduced this topic organically |
+| `parent_node_id` | null for root nodes |
+
+Topics per session are derived via `SELECT DISTINCT topic_name FROM session_nodes WHERE session_id = ?` — no separate join table needed.
+
+### Session lifecycle
+- **Start:** `mentor+` skill creates a session row and draft file on activation
+- **During:** each `review_topic` call appends a node; draft file updated with running summary
+- **End:** user explicitly invokes an end-session command; AI generates both summaries; user reviews public version before publishing
+
+---
+
 ## Architecture Notes
 
 - DB: SQLite at `~/.local/share/agent-mentor/knowledge.db`
-- MCP server: Rust binary (`mcp/sm2/`)
-- Schema extension needed: `sessions` table, `session_nodes` table
-- Dashboard: TBD (could be a standalone web app, a CLI command, or a plugin feature)
+- MCP server: Rust binary at `knowledge/mcp/`
+- Dashboard: Ratatui TUI binary `mentor-dashboard` at `knowledge/dashboard/`
+- Session drafts: MD files alongside the database
