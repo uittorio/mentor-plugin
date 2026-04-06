@@ -2,11 +2,11 @@
 
 set -euo pipefail
 
-curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/opencode-plugin-release/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/uittorio/mentor-plugin/main/scripts/install-dashboard.sh | bash
 
 VERSION="$(echo "$GITHUB_REF" | sed 's/refs\/tags\/v//')"
 
-BINARY="${HOME}/.config/opencode/agent-mentor/mcp-server.sh"
+BINARY="${HOME}/.local/bin/mentor-dashboard"
 
 BINARY_OUTPUT="$($BINARY --version)"
 
