@@ -341,7 +341,7 @@ dependencies = [
 
 [[package]]
 name = "dashboard"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "chrono",
  "color-eyre",
@@ -901,7 +901,7 @@ dependencies = [
 
 [[package]]
 name = "mcp"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "rmcp",
  "serde",
@@ -1964,7 +1964,7 @@ dependencies = [
 
 [[package]]
 name = "topic"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "rusqlite",
  "serde",
