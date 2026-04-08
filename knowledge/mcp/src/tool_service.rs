@@ -1,3 +1,5 @@
+use learning::topic::{QuestionDepth, Topic};
+use learning::topic_storage::TopicStorage;
 use rmcp::{
     ServerHandler,
     handler::server::{tool::ToolRouter, wrapper::Parameters},
@@ -6,14 +8,13 @@ use rmcp::{
     tool, tool_handler, tool_router,
 };
 use std::time::SystemTimeError;
-use topic::topic_storage::TopicStorage;
-use topic::{QuestionDepth, Topic};
 
+use crate::create_session::CreateSessionResult;
 use crate::{
+    get_topics::GetTopicsParams,
     review_topic::{ReviewTopicParams, ReviewTopicResult},
     topic_candidates::{TopicCandidate, TopicCandidatesParams},
     topic_depth::{TopicDepthParams, TopicDepthResult},
-    get_topics::GetTopicsParams,
 };
 
 pub struct ToolService {
@@ -111,7 +112,7 @@ impl ToolService {
     ) -> Result<String, String> {
         let epoch_now = self.now_epoch().map_err(|e| e.to_string())?;
 
-        let results = &self
+        let results = self
             .topic_storage
             .get_overdue(epoch_now)
             .map_err(|e| e.to_string())?
@@ -123,7 +124,18 @@ impl ToolService {
             })
             .collect::<Vec<TopicCandidate>>();
 
-        serde_json::to_string(results).map_err(|e| e.to_string())
+        serde_json::to_string(&results).map_err(|e| e.to_string())
+    }
+
+    #[tool(
+        description = "Create a new session in order to store the summary and the tree of socratic questions and answers."
+    )]
+    async fn create_session(&self) -> Result<String, String> {
+        let result = CreateSessionResult {
+            session_id: "id".to_string(),
+            session_file_path: "path".to_string(),
+        };
+        serde_json::to_string(&result).map_err(|e| e.to_string())
     }
 }
 

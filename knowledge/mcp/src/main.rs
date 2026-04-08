@@ -3,6 +3,7 @@ use std::{env::Args, error::Error};
 use rmcp::serve_server;
 
 use crate::tool_service::ToolService;
+mod create_session;
 mod deserialisers;
 mod get_topics;
 mod review_topic;
@@ -21,7 +22,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let io = (tokio::io::stdin(), tokio::io::stdout());
 
-    let storage = topic::sqlite_topic_storage::SqliteTopicStorage::init()?;
+    let storage = learning::sqlite_learning_storage::SqliteTopicStorage::init()?;
 
     serve_server(ToolService::new(Box::new(storage)), io)
         .await?

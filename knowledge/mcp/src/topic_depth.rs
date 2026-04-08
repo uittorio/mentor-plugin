@@ -1,5 +1,5 @@
+use learning::topic::QuestionDepth;
 use rmcp::schemars;
-use topic::QuestionDepth;
 
 #[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
 pub struct TopicDepthParams {

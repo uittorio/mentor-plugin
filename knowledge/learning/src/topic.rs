@@ -1,12 +1,6 @@
 use serde::Serialize;
 
-use crate::sm2::sm2;
-use crate::trigram_similarity::trigram_similarity;
-
-mod sm2;
-pub mod sqlite_topic_storage;
-pub mod topic_storage;
-pub mod trigram_similarity;
+use crate::{sm2::sm2, trigram_similarity::trigram_similarity};
 
 #[derive(Clone)]
 pub struct Topic {

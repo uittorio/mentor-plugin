@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use crate::Topic;
+use crate::topic::Topic;
 
 pub trait TopicStorage {
     fn get_overdue(&self, now: u64) -> Result<Vec<Topic>, TopicStorageError>;

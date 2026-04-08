@@ -4,7 +4,7 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
-topic = { path = "../topic" }
+learning = { path = "../learning" }
 ratatui = "0.30.0"
 color-eyre = "0.6.3"
 crossterm = "0.29.0"

@@ -1,10 +1,11 @@
 use std::{path::Path, sync::Mutex};
 
+use rusqlite::{Connection, OptionalExtension, Row, params};
+
 use crate::{
-    Topic,
+    topic::Topic,
     topic_storage::{TopicStorage, TopicStorageError},
 };
-use rusqlite::{Connection, OptionalExtension, Row, params};
 
 pub struct SqliteTopicStorage(Mutex<Connection>);
 

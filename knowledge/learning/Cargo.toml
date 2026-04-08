@@ -1,5 +1,5 @@
 [package]
-name = "topic"
+name = "learning"
 version.workspace = true
 edition = "2024"
 
