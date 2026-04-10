@@ -1,5 +1,6 @@
 use std::{env::Args, error::Error};
 
+use learning::sqlite::sqlite_topic_storage::SqliteTopicStorage;
 use rmcp::serve_server;
 
 use crate::tool_service::ToolService;
@@ -22,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let io = (tokio::io::stdin(), tokio::io::stdout());
 
-    let storage = learning::sqlite_learning_storage::SqliteTopicStorage::init()?;
+    let storage = SqliteTopicStorage::init()?;
 
     serve_server(ToolService::new(Box::new(storage)), io)
         .await?

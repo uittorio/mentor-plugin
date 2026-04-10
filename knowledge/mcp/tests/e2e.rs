@@ -55,6 +55,7 @@ async fn list_tools() {
         "topic_depth",
         "review_topic",
         "get_topic_candidates",
+        "create_session",
     ];
     expected.sort();
 

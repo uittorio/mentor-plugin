@@ -9,7 +9,7 @@ use rmcp::{
 };
 use std::time::SystemTimeError;
 
-use crate::create_session::CreateSessionResult;
+use crate::create_session::{CreateSessionParams, CreateSessionResult};
 use crate::{
     get_topics::GetTopicsParams,
     review_topic::{ReviewTopicParams, ReviewTopicResult},
@@ -130,7 +130,10 @@ impl ToolService {
     #[tool(
         description = "Create a new session in order to store the summary and the tree of socratic questions and answers."
     )]
-    async fn create_session(&self) -> Result<String, String> {
+    async fn create_session(
+        &self,
+        params: Parameters<CreateSessionParams>,
+    ) -> Result<String, String> {
         let result = CreateSessionResult {
             session_id: "id".to_string(),
             session_file_path: "path".to_string(),

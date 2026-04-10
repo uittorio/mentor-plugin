@@ -6,7 +6,7 @@ use std::{
 
 use chrono::DateTime;
 use crossterm::event::{Event, KeyCode, KeyEvent};
-use learning::sqlite_learning_storage::SqliteTopicStorage;
+use learning::sqlite::sqlite_topic_storage::SqliteTopicStorage;
 use learning::topic::Topic;
 use learning::topic_storage::TopicStorage;
 use ratatui::{

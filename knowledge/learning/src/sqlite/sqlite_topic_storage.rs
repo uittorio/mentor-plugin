@@ -1,40 +1,23 @@
-use std::{path::Path, sync::Mutex};
+use std::sync::Mutex;
 
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
-use crate::{
-    topic::Topic,
-    topic_storage::{TopicStorage, TopicStorageError},
-};
+use crate::sqlite::sqlite_storage::db_path;
+use crate::storage_error::StorageError;
+use crate::{topic::Topic, topic_storage::TopicStorage};
 
 pub struct SqliteTopicStorage(Mutex<Connection>);
 
-fn db_path() -> std::io::Result<String> {
-    let folder = std::env::var("AGENT_MENTOR_DB_FOLDER").unwrap_or_else(|_| {
-        let home = std::env::var("HOME").expect("HOME not set");
-
-        format!("{}/.local/share/agent-mentor", home)
-    });
-
-    std::fs::create_dir_all(&folder)?;
-
-    Ok(Path::new(&folder)
-        .join("knowledge.db")
-        .to_str()
-        .unwrap()
-        .to_string())
-}
-
 impl SqliteTopicStorage {
     #[cfg(test)]
-    pub fn init_inmemory() -> Result<Self, TopicStorageError> {
+    pub fn init_inmemory() -> Result<Self, StorageError> {
         let connection = Connection::open_in_memory()?;
         let storage = SqliteTopicStorage(Mutex::new(connection));
         storage.create_tables()?;
         Ok(storage)
     }
 
-    pub fn init() -> Result<Self, TopicStorageError> {
+    pub fn init() -> Result<Self, StorageError> {
         let path = db_path()?;
         let connection = Connection::open(path)?;
         let storage = SqliteTopicStorage(Mutex::new(connection));
@@ -73,7 +56,7 @@ impl SqliteTopicStorage {
 }
 
 impl TopicStorage for SqliteTopicStorage {
-    fn get_overdue(&self, now: u64) -> Result<Vec<Topic>, TopicStorageError> {
+    fn get_overdue(&self, now: u64) -> Result<Vec<Topic>, StorageError> {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
@@ -91,7 +74,7 @@ impl TopicStorage for SqliteTopicStorage {
         Ok(topics)
     }
 
-    fn get_all(&self) -> Result<Vec<Topic>, TopicStorageError> {
+    fn get_all(&self) -> Result<Vec<Topic>, StorageError> {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
@@ -107,7 +90,7 @@ impl TopicStorage for SqliteTopicStorage {
         Ok(topics)
     }
 
-    fn get(&self, topic: &str) -> Result<Option<Topic>, TopicStorageError> {
+    fn get(&self, topic: &str) -> Result<Option<Topic>, StorageError> {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
@@ -124,7 +107,7 @@ impl TopicStorage for SqliteTopicStorage {
         Ok(topic)
     }
 
-    fn upsert(&self, topic: &Topic) -> Result<(), TopicStorageError> {
+    fn upsert(&self, topic: &Topic) -> Result<(), StorageError> {
         let conn = self.0.lock().unwrap();
 
         conn.execute(
@@ -147,23 +130,6 @@ impl TopicStorage for SqliteTopicStorage {
         )?;
 
         Ok(())
-    }
-}
-
-impl From<std::io::Error> for TopicStorageError {
-    fn from(value: std::io::Error) -> Self {
-        TopicStorageError {
-            message: "TopicStorageError stdio error".to_string(),
-            source: Some(Box::new(value)),
-        }
-    }
-}
-impl From<rusqlite::Error> for TopicStorageError {
-    fn from(value: rusqlite::Error) -> Self {
-        TopicStorageError {
-            message: "TopicStorageError sqlite error".to_string(),
-            source: Some(Box::new(value)),
-        }
     }
 }
 
