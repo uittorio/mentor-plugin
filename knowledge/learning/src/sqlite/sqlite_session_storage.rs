@@ -26,7 +26,6 @@ impl SqliteSessionStorage {
         let connection = Connection::open(path)?;
         let storage = SqliteSessionStorage(Mutex::new(connection));
         storage.create_tables()?;
-
         Ok(storage)
     }
 
@@ -38,7 +37,8 @@ impl SqliteSessionStorage {
               id TEXT PRIMARY KEY,
               name TEXT NOT NULL UNIQUE COLLATE NOCASE,
               created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-              modified_at INTEGER NOT NULL DEFAULT (unixepoch())
+              modified_at INTEGER NOT NULL DEFAULT (unixepoch()),
+              file_path TEXT NOT NULL
             );
             COMMIT;
             ",
@@ -51,6 +51,7 @@ impl SqliteSessionStorage {
             name: row.get(1)?,
             created_at: row.get::<_, i64>(2)? as u64,
             modified_at: row.get::<_, i64>(3)? as u64,
+            file_path: row.get(4)?,
         })
     }
 }
@@ -85,14 +86,15 @@ impl SessionStorage for SqliteSessionStorage {
 
         conn.execute(
             "
-            INSERT INTO sessions (id, name, created_at, modified_at)
-            VALUES (?1, ?2, ?3, ?4)
+            INSERT INTO sessions (id, name, created_at, modified_at, file_path)
+            VALUES (?1, ?2, ?3, ?4, ?5)
             ",
             params![
                 session.id,
                 session.name,
                 session.created_at as i64,
-                session.modified_at as i64
+                session.modified_at as i64,
+                session.file_path
             ],
         )?;
 
@@ -134,6 +136,7 @@ mod tests {
                 name: "session name".to_string(),
                 created_at: 1775764375,
                 modified_at: 1775764371,
+                file_path: "file/path.md".to_string(),
             })
             .unwrap();
 
@@ -142,5 +145,6 @@ mod tests {
         assert_eq!(inserted.name, "session name");
         assert_eq!(inserted.created_at, 1775764375);
         assert_eq!(inserted.modified_at, 1775764371);
+        assert_eq!(inserted.file_path, "file/path.md");
     }
 }

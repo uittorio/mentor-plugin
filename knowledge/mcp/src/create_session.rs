@@ -8,5 +8,5 @@ pub struct CreateSessionResult {
 
 #[derive(serde::Deserialize, schemars::JsonSchema)]
 pub struct CreateSessionParams {
-    pub title: String,
+    pub name: String,
 }

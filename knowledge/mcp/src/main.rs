@@ -1,6 +1,8 @@
 use std::{env::Args, error::Error};
 
-use learning::sqlite::sqlite_topic_storage::SqliteTopicStorage;
+use learning::sqlite::{
+    sqlite_session_storage::SqliteSessionStorage, sqlite_topic_storage::SqliteTopicStorage,
+};
 use rmcp::serve_server;
 
 use crate::tool_service::ToolService;
@@ -23,12 +25,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let io = (tokio::io::stdin(), tokio::io::stdout());
 
-    let storage = SqliteTopicStorage::init()?;
+    let topic_storage = SqliteTopicStorage::init()?;
+    let session_storage = SqliteSessionStorage::init()?;
 
-    serve_server(ToolService::new(Box::new(storage)), io)
-        .await?
-        .waiting()
-        .await?;
+    serve_server(
+        ToolService::new(Box::new(topic_storage), Box::new(session_storage)),
+        io,
+    )
+    .await?
+    .waiting()
+    .await?;
     Ok(())
 }
 

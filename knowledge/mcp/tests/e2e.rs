@@ -11,7 +11,13 @@ use tokio::process::Command;
 #[derive(Deserialize)]
 struct TopicDepthResult {
     name: String,
-    question_depth: String, // or whatever QuestionDepth deserializes to
+    question_depth: String,
+}
+
+#[derive(Deserialize)]
+struct CreateSessionResult {
+    session_id: String,
+    session_file_path: String,
 }
 
 #[derive(Deserialize)]
@@ -30,7 +36,7 @@ async fn create_client() -> TestClientWrapper {
 
     let mut command = Command::new(binary);
     let tmp = TempDir::new().unwrap();
-    command.env("AGENT_MENTOR_DB_FOLDER", tmp.path());
+    command.env("AGENT_MENTOR_STORAGE_FOLDER", tmp.path());
 
     let process = TokioChildProcess::new(command).unwrap();
     let client = ().serve(process).await.unwrap();
@@ -143,4 +149,24 @@ async fn get_topic_candidates() {
     let candidates = result.into_typed::<Vec<TopicCandidate>>().unwrap();
 
     assert_eq!(candidates.len(), 0);
+}
+
+#[tokio::test]
+async fn create_session() {
+    let client = create_client().await;
+
+    let session = json!({
+        "name": "session name"
+    });
+
+    let result = call_tool(&client, "create_session".to_string(), &session).await;
+
+    let session_result = result.into_typed::<CreateSessionResult>().unwrap();
+
+    assert_eq!(
+        session_result
+            .session_file_path
+            .ends_with("session_name.md"),
+        true
+    );
 }

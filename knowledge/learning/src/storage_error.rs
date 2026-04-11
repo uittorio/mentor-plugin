@@ -8,6 +8,10 @@ pub struct StorageError {
 
 impl Display for StorageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(s) = &self.source {
+            return write!(f, "{} {}", self.message, s);
+        }
+
         write!(f, "{}", self.message)
     }
 }

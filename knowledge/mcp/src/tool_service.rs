@@ -1,3 +1,6 @@
+use learning::file_storage::session_file_storage;
+use learning::session::Session;
+use learning::session_storage::SessionStorage;
 use learning::topic::{QuestionDepth, Topic};
 use learning::topic_storage::TopicStorage;
 use rmcp::{
@@ -20,6 +23,7 @@ use crate::{
 pub struct ToolService {
     tool_router: ToolRouter<Self>,
     topic_storage: Box<dyn TopicStorage + Send + Sync>,
+    session_storage: Box<dyn SessionStorage + Send + Sync>,
 }
 
 fn normalise_topic(name: &str) -> String {
@@ -28,10 +32,14 @@ fn normalise_topic(name: &str) -> String {
 
 #[tool_router]
 impl ToolService {
-    pub fn new(topic_storage: Box<dyn TopicStorage + Send + Sync>) -> Self {
+    pub fn new(
+        topic_storage: Box<dyn TopicStorage + Send + Sync>,
+        session_storage: Box<dyn SessionStorage + Send + Sync>,
+    ) -> Self {
         Self {
             tool_router: Self::tool_router(),
             topic_storage,
+            session_storage,
         }
     }
 
@@ -134,10 +142,23 @@ impl ToolService {
         &self,
         params: Parameters<CreateSessionParams>,
     ) -> Result<String, String> {
+        let epoch_now = self.now_epoch().map_err(|e| e.to_string())?;
+
+        let name = &params.0.name;
+
+        let session_file_storage_path = session_file_storage(name).map_err(|e| e.to_string())?;
+
+        let session = Session::new(&name, &session_file_storage_path, epoch_now);
+
+        self.session_storage
+            .create(&session)
+            .map_err(|e| e.to_string())?;
+
         let result = CreateSessionResult {
-            session_id: "id".to_string(),
-            session_file_path: "path".to_string(),
+            session_id: session.id.0.to_string(),
+            session_file_path: session.file_path,
         };
+
         serde_json::to_string(&result).map_err(|e| e.to_string())
     }
 }

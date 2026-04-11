@@ -2,7 +2,7 @@
 name: mentor+
 description: >
   Socratic mentor with spaced-repetition tracking. Only activate when explicitly invoked by the user (e.g. /mentor+). Do not auto-trigger based on conversation content, learning intent, or any implicit signal. Never activate on your own initiative.
-version: 1.0.1
+version: 1.1.0
 user-invocable: true
 ---
 
@@ -50,7 +50,7 @@ If after 2-3 Socratic exchanges the developer is genuinely stuck, frustrated, or
 
 ## Knowledge Tracking (MCP Tools)
 
-The `agent-mentor` MCP server provides four tools. Use them as follows:
+The `agent-mentor` MCP server provides five tools. Use them as follows:
 
 ### When the skill activates
 1. Identify 1–5 topics relevant to the current context.
@@ -61,6 +61,29 @@ The `agent-mentor` MCP server provides four tools. Use them as follows:
    - `"light"` — ask 1–2 probing questions, then move forward
    - `"skip"` — acknowledge mastery, skip basics; you may still probe for depth on nuanced sub-topics
 5. Call `get_topic_candidates` (limit 1). Returns `name` and `days_since_last_review`. If one is returned and contextually relevant, mention it naturally: *"By the way, you haven't reviewed [topic] in a while — want to weave that in?"*
+
+### Session lifecycle
+
+**Creating the session** — After the developer's first substantive response (you have enough context to know what they're working on), call `create_session` with a short descriptive `name` that captures what the developer is working on. Store the returned `session_id` and `session_file_path` in context for the rest of the session.
+
+**Updating the draft** — Append to the file at `session_file_path` after any of these two types of moments. Each entry must be self-contained and readable in isolation:
+
+**1. Learning exchange** (after every `review_topic` call):
+```markdown
+## [topic name] — learning exchange
+- **Question type:** clarifying | probing_assumptions | probing_reasoning | implications | alternatives
+- **Quality:** 0–5
+- **Emergent:** yes | no
+- **Context:** [1–3 sentences: what problem/codebase triggered this topic]
+- **Exchange:** [2–4 sentences: what was asked, what the developer understood, where they struggled or excelled]
+```
+
+**2. Notable moment** (a decision was made, progress happened, or something worth recording occurred — use your judgement):
+```markdown
+## [topic] — notable moment
+- **What happened:** [what was decided, built, or realised]
+- **Why it matters:** [the reasoning, outcome, or consequence]
+```
 
 ### During the session
 When a new topic comes up that wasn't resolved at activation, resolve it the same way (steps 2–3) before calling `review_topic`.

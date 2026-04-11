@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::storage_error::StorageError;
+use crate::{file_storage::file_storage_folder, storage_error::StorageError};
 
 impl From<std::io::Error> for StorageError {
     fn from(value: std::io::Error) -> Self {
@@ -21,11 +21,7 @@ impl From<rusqlite::Error> for StorageError {
 }
 
 pub fn db_path() -> std::io::Result<String> {
-    let folder = std::env::var("AGENT_MENTOR_DB_FOLDER").unwrap_or_else(|_| {
-        let home = std::env::var("HOME").expect("HOME not set");
-
-        format!("{}/.local/share/agent-mentor", home)
-    });
+    let folder = file_storage_folder();
 
     std::fs::create_dir_all(&folder)?;
 
