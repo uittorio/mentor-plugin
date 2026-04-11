@@ -105,7 +105,7 @@ impl SessionStorage for SqliteSessionStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT s.id, s.name, s.created_at, s.modified_at
+            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_path
             FROM sessions s
             WHERE s.id = (?1)
             ",
