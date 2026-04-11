@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+cd knowledge
+cargo test --lib --bins
+
+cargo build --release
+
+cargo test --test e2e

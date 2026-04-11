@@ -2,7 +2,46 @@
 
 ---
 
-# Testing strategy
+## Dependencies
+
+- [Rust](https://rustup.rs/) (stable toolchain)
+
+## Running tests
+
+From the `knowledge/` directory:
+
+```sh
+# Unit and integration tests
+cargo test --lib --bins
+
+# E2e tests (requires a release build first)
+cargo build --release
+cargo test --test e2e
+```
+
+## Git hooks
+
+A pre-commit hook is provided that runs the full test suite before every commit: unit tests, release build, and e2e tests.
+
+To enable it:
+
+```sh
+cp githooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+> **Note:** This step must be done manually after cloning. Git does not run hooks automatically on clone.
+
+## Project structure
+
+- `knowledge/` — Rust workspace: MCP server and dashboard binaries, learning domain logic
+- `claude-plugin/` — Claude Code plugin (skill files)
+- `opencode-plugin/` — Opencode plugin (skill files)
+- `githooks/` — Shared git hooks
+- `scripts/` — Release and utility scripts
+
+
+## Testing strategy
 
 This project ships different components to be used with coding agent or just a simple binaries. It also contains business logic in the main components to make decisions about topic etc. 
 We have various tests to help ourself during the development. 
