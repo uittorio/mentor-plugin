@@ -117,6 +117,22 @@ impl SessionStorage for SqliteSessionStorage {
 
         Ok(session)
     }
+
+    fn get_all(&self) -> Result<Vec<Session>, StorageError> {
+        let conn = self.0.lock().unwrap();
+        let mut statement = conn.prepare(
+            "
+            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_path
+            FROM sessions s
+            ",
+        )?;
+
+        let sessions = statement
+            .query_map([], |row| self.map(row))?
+            .collect::<Result<Vec<Session>, rusqlite::Error>>()?;
+
+        Ok(sessions)
+    }
 }
 
 #[cfg(test)]
@@ -146,5 +162,34 @@ mod tests {
         assert_eq!(inserted.created_at, 1775764375);
         assert_eq!(inserted.modified_at, 1775764371);
         assert_eq!(inserted.file_path, "file/path.md");
+    }
+
+    #[test]
+    fn get_all() {
+        let storage = SqliteSessionStorage::init_inmemory().unwrap();
+
+        storage
+            .create(&Session {
+                id: SessionId::new(),
+                name: "session name 1".to_string(),
+                created_at: 1775764375,
+                modified_at: 1775764371,
+                file_path: "file/path1.md".to_string(),
+            })
+            .unwrap();
+
+        storage
+            .create(&Session {
+                id: SessionId::new(),
+                name: "session name 2".to_string(),
+                created_at: 1775764375,
+                modified_at: 1775764371,
+                file_path: "file/path2.md".to_string(),
+            })
+            .unwrap();
+
+        let sessions = storage.get_all().unwrap();
+
+        assert_eq!(sessions.len(), 2);
     }
 }

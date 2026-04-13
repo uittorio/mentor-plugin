@@ -4,18 +4,25 @@ use std::{
     time::{Duration, Instant},
 };
 
-use chrono::DateTime;
-use crossterm::event::{Event, KeyCode, KeyEvent};
+use crossterm::event::{Event, KeyCode};
+use learning::session_storage::SessionStorage;
+use learning::sqlite::sqlite_session_storage::SqliteSessionStorage;
 use learning::sqlite::sqlite_topic_storage::SqliteTopicStorage;
 use learning::topic::Topic;
 use learning::topic_storage::TopicStorage;
-use ratatui::{
-    Frame, Terminal,
-    layout::Constraint,
-    prelude::CrosstermBackend,
-    style::Style,
-    widgets::{Cell, Row, Table},
-};
+use ratatui::layout::{Layout, Offset, Rect};
+use ratatui::style::{Color, Stylize};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Tabs};
+use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend, style::Style};
+
+use crate::sessions::render_sessions;
+use crate::state::{Message, Model, View, update};
+use crate::topics::render_topics;
+
+mod sessions;
+mod state;
+mod topics;
 
 fn main() -> color_eyre::Result<()> {
     let mut args = std::env::args();
@@ -33,25 +40,40 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<()> {
-    let storage = SqliteTopicStorage::init()?;
-    let mut topics = storage.get_all()?;
+    let topic_storage = SqliteTopicStorage::init()?;
+    let session_storage = SqliteSessionStorage::init()?;
+
+    let mut model = Model::new();
+
+    update(&mut model, Message::UpdateTopics(topic_storage.get_all()?));
+    update(
+        &mut model,
+        Message::UpdateSessions(session_storage.get_all()?),
+    );
+
     let mut current_time = Instant::now();
 
     loop {
         if current_time.elapsed() >= Duration::from_secs(5) {
-            topics = storage.get_all()?;
+            update(&mut model, Message::UpdateTopics(topic_storage.get_all()?));
+            update(
+                &mut model,
+                Message::UpdateSessions(session_storage.get_all()?),
+            );
             current_time = Instant::now();
         };
 
-        terminal.draw(|frame| render(frame, &topics))?;
-        let event = crossterm::event::poll(Duration::from_millis(50));
+        terminal.draw(|frame| render(frame, &model))?;
+        let event = crossterm::event::poll(Duration::from_millis(50))?;
 
         match event {
-            Ok(true) => match crossterm::event::read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    ..
-                }) => break,
+            true => match crossterm::event::read()? {
+                Event::Key(key_event) => match key_event.code {
+                    KeyCode::Char('q') => break,
+                    KeyCode::Char('h') => update(&mut model, Message::PrevView),
+                    KeyCode::Char('l') => update(&mut model, Message::NextView),
+                    _ => {}
+                },
                 _ => {}
             },
             _ => {}
@@ -61,59 +83,47 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
     Ok(())
 }
 
-fn render(frame: &mut Frame, topics: &Vec<Topic>) {
-    let now_epoc = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|t| t.as_secs())
-        .unwrap();
+fn render(frame: &mut Frame, model: &Model) {
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
+    let [top, main] = frame.area().layout(&layout);
 
-    let rows = topics.iter().map(|t| {
-        let next_review = t.reviewed_at + (t.interval * 60 * 60 * 24) as u64;
-        let next_review_value = DateTime::from_timestamp_secs(next_review as i64)
-            .unwrap()
-            .format("%b %e %T %Y")
-            .to_string();
+    let title = Line::from_iter([
+        Span::from("Mentor dashboard").bold(),
+        Span::from("(Press 'q' to quit, (h,l) to navigate tabs)"),
+    ]);
 
-        let next_review_formatted = if next_review < now_epoc {
-            format!("{} (overdue)", next_review_value)
-        } else {
-            next_review_value
-        };
-        Row::new([
-            Cell::from(t.name.as_str()),
-            Cell::from(t.ease_factor.to_string()),
-            Cell::from(t.repetitions.to_string()),
-            Cell::from(
-                DateTime::from_timestamp_secs(t.reviewed_at as i64)
-                    .unwrap()
-                    .format("%b %e %T %Y")
-                    .to_string(),
-            ),
-            Cell::from(next_review_formatted),
-        ])
-    });
+    frame.render_widget(title.centered(), top);
 
-    let header = Row::new(vec![
-        Cell::from("Topic"),
-        Cell::from("Ease factor"),
-        Cell::from("Repetitions"),
-        Cell::from("Last review"),
-        Cell::from("Next review"),
+    render_content(frame, main, model);
+    render_tabs(frame, main + Offset::new(1, 0), model);
+}
+
+fn render_content(frame: &mut Frame, area: Rect, model: &Model) {
+    let block = Block::bordered();
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    match model.selected_view {
+        View::Topics => render_topics(frame, inner, model),
+        View::Sessions => render_sessions(frame, inner, model),
+    };
+}
+
+fn render_tabs(frame: &mut Frame, area: Rect, model: &Model) {
+    let [_, center, _] = Layout::horizontal([
+        Constraint::Fill(1),
+        Constraint::Length(30), // width of your tabs
+        Constraint::Fill(1),
     ])
-    .style(Style::new().bold())
-    .bottom_margin(1);
-    let t = Table::new(
-        rows,
-        [
-            Constraint::Percentage(40),
-            Constraint::Percentage(9),
-            Constraint::Percentage(9),
-            Constraint::Percentage(18),
-            Constraint::Percentage(24),
-        ],
-    )
-    .header(header);
-    frame.render_widget(t, frame.area());
+    .areas(area);
+
+    let tabs = Tabs::new(vec!["Topics", "Sessions"])
+        .style(Color::White)
+        .highlight_style(Style::default().magenta().on_black().bold())
+        .select(model.selected_view as usize)
+        .divider("|")
+        .padding(" ", " ");
+    frame.render_widget(tabs, center);
 }
 
 fn has_version_argument(args: &mut Args) -> bool {
