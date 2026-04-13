@@ -8,7 +8,6 @@ use crossterm::event::{Event, KeyCode};
 use learning::session_storage::SessionStorage;
 use learning::sqlite::sqlite_session_storage::SqliteSessionStorage;
 use learning::sqlite::sqlite_topic_storage::SqliteTopicStorage;
-use learning::topic::Topic;
 use learning::topic_storage::TopicStorage;
 use ratatui::layout::{Layout, Offset, Rect};
 use ratatui::style::{Color, Stylize};
@@ -63,7 +62,7 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
             current_time = Instant::now();
         };
 
-        terminal.draw(|frame| render(frame, &model))?;
+        terminal.draw(|frame| render(frame, &mut model))?;
         let event = crossterm::event::poll(Duration::from_millis(50))?;
 
         match event {
@@ -72,6 +71,8 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
                     KeyCode::Char('q') => break,
                     KeyCode::Char('h') => update(&mut model, Message::PrevView),
                     KeyCode::Char('l') => update(&mut model, Message::NextView),
+                    KeyCode::Char('j') => update(&mut model, Message::NavigateDown),
+                    KeyCode::Char('k') => update(&mut model, Message::NavigateUp),
                     _ => {}
                 },
                 _ => {}
@@ -83,13 +84,13 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
     Ok(())
 }
 
-fn render(frame: &mut Frame, model: &Model) {
+fn render(frame: &mut Frame, model: &mut Model) {
     let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let [top, main] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Mentor dashboard").bold(),
-        Span::from("(Press 'q' to quit, (h,l) to navigate tabs)"),
+        Span::from("(Press 'q' to quit, (h,l) to navigate tabs, (j,k) to navigate content)"),
     ]);
 
     frame.render_widget(title.centered(), top);
@@ -98,7 +99,7 @@ fn render(frame: &mut Frame, model: &Model) {
     render_tabs(frame, main + Offset::new(1, 0), model);
 }
 
-fn render_content(frame: &mut Frame, area: Rect, model: &Model) {
+fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
     let block = Block::bordered();
     let inner = block.inner(area);
     frame.render_widget(block, area);

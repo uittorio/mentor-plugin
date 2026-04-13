@@ -2,13 +2,13 @@ use chrono::DateTime;
 use ratatui::{
     Frame,
     layout::{Constraint, Rect},
-    style::Style,
+    style::{Color, Style},
     widgets::{Cell, Row, Table},
 };
 
 use crate::state::Model;
 
-pub fn render_topics(frame: &mut Frame, area: Rect, model: &Model) {
+pub fn render_topics(frame: &mut Frame, area: Rect, model: &mut Model) {
     let now_epoc = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|t| t.as_secs())
@@ -60,7 +60,8 @@ pub fn render_topics(frame: &mut Frame, area: Rect, model: &Model) {
             Constraint::Percentage(24),
         ],
     )
+    .row_highlight_style(Style::new().bg(Color::DarkGray))
     .header(header);
 
-    frame.render_widget(table, area);
+    frame.render_stateful_widget(table, area, &mut model.topics_state);
 }

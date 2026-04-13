@@ -2,13 +2,13 @@ use chrono::DateTime;
 use ratatui::{
     Frame,
     layout::{Constraint, Rect},
-    style::Style,
+    style::{Color, Style},
     widgets::{Cell, Row, Table},
 };
 
 use crate::state::Model;
 
-pub fn render_sessions(frame: &mut Frame, area: Rect, model: &Model) {
+pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
     let rows = model.sessions.iter().map(|s| {
         Row::new([
             Cell::from(s.name.as_str()),
@@ -29,7 +29,8 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &Model) {
         rows,
         [Constraint::Percentage(60), Constraint::Percentage(40)],
     )
+    .row_highlight_style(Style::new().bg(Color::DarkGray))
     .header(header);
 
-    frame.render_widget(table, area);
+    frame.render_stateful_widget(table, area, &mut model.session_state);
 }
