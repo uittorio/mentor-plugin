@@ -7,12 +7,20 @@ pub enum View {
     Sessions,
 }
 
+#[derive(Copy, Clone)]
+pub enum Pane {
+    Sessions,
+    SessionMd,
+}
+
 pub struct Model {
     pub topics: Vec<Topic>,
     pub sessions: Vec<Session>,
     pub selected_view: View,
     pub topics_state: TableState,
     pub session_state: TableState,
+    pub focused_pane: Pane,
+    pub session_md_scroll: u16,
 }
 
 impl Model {
@@ -23,17 +31,21 @@ impl Model {
             sessions: vec![],
             topics_state: TableState::default(),
             session_state: TableState::default(),
+            focused_pane: Pane::Sessions,
+            session_md_scroll: 0,
         }
     }
 }
 
 pub enum Message {
-    NextView,
-    PrevView,
+    ShowTopicView,
+    ShowSessionView,
     UpdateTopics(Vec<Topic>),
     UpdateSessions(Vec<Session>),
     NavigateUp,
     NavigateDown,
+    NextPane,
+    PrevPane,
 }
 
 pub fn update_selected_table_up(table_state: &mut TableState) {
@@ -57,13 +69,12 @@ pub fn update_selected_table_down(table_state: &mut TableState, list_len: usize)
 }
 pub fn update(model: &mut Model, msg: Message) -> () {
     match msg {
-        Message::NextView => match model.selected_view {
-            View::Topics => model.selected_view = View::Sessions,
-            View::Sessions => model.selected_view = View::Topics,
-        },
-        Message::PrevView => match model.selected_view {
-            View::Topics => model.selected_view = View::Sessions,
-            View::Sessions => model.selected_view = View::Topics,
+        Message::ShowTopicView => model.selected_view = View::Topics,
+        Message::ShowSessionView => model.selected_view = View::Sessions,
+        Message::NextPane | Message::PrevPane => match (model.selected_view, model.focused_pane) {
+            (View::Topics, _) => {}
+            (View::Sessions, Pane::Sessions) => model.focused_pane = Pane::SessionMd,
+            (View::Sessions, Pane::SessionMd) => model.focused_pane = Pane::Sessions,
         },
         Message::UpdateTopics(topics) => {
             model.topics = topics;
@@ -75,17 +86,23 @@ pub fn update(model: &mut Model, msg: Message) -> () {
             View::Topics => {
                 update_selected_table_up(&mut model.topics_state);
             }
-            View::Sessions => {
-                update_selected_table_up(&mut model.session_state);
-            }
+            View::Sessions => match model.focused_pane {
+                Pane::Sessions => update_selected_table_up(&mut model.session_state),
+                Pane::SessionMd => model.session_md_scroll = model.session_md_scroll + 1,
+            },
         },
         Message::NavigateDown => match model.selected_view {
             View::Topics => {
                 update_selected_table_down(&mut model.topics_state, model.topics.len());
             }
-            View::Sessions => {
-                update_selected_table_down(&mut model.session_state, model.sessions.len());
-            }
+            View::Sessions => match model.focused_pane {
+                Pane::Sessions => {
+                    update_selected_table_down(&mut model.session_state, model.sessions.len())
+                }
+                Pane::SessionMd => {
+                    model.session_md_scroll = model.session_md_scroll.saturating_sub(1)
+                }
+            },
         },
     }
 }

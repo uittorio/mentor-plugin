@@ -69,10 +69,12 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
             true => match crossterm::event::read()? {
                 Event::Key(key_event) => match key_event.code {
                     KeyCode::Char('q') => break,
-                    KeyCode::Char('h') => update(&mut model, Message::PrevView),
-                    KeyCode::Char('l') => update(&mut model, Message::NextView),
+                    KeyCode::Char('s') => update(&mut model, Message::ShowSessionView),
+                    KeyCode::Char('t') => update(&mut model, Message::ShowTopicView),
                     KeyCode::Char('j') => update(&mut model, Message::NavigateDown),
                     KeyCode::Char('k') => update(&mut model, Message::NavigateUp),
+                    KeyCode::Char('h') => update(&mut model, Message::PrevPane),
+                    KeyCode::Char('l') => update(&mut model, Message::NextPane),
                     _ => {}
                 },
                 _ => {}
@@ -90,7 +92,9 @@ fn render(frame: &mut Frame, model: &mut Model) {
 
     let title = Line::from_iter([
         Span::from("Mentor dashboard").bold(),
-        Span::from("(Press 'q' to quit, (h,l) to navigate tabs, (j,k) to navigate content)"),
+        Span::from(
+            "((q) to quit, (s) sessions, (t) topics, (j,k) navigate up and down, (h,l) focus pane)",
+        ),
     ]);
 
     frame.render_widget(title.centered(), top);

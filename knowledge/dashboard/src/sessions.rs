@@ -1,12 +1,14 @@
+use std::fs;
+
 use chrono::DateTime;
 use ratatui::{
     Frame,
-    layout::{Constraint, Rect},
+    layout::{Constraint, Layout, Rect},
     style::{Color, Style},
-    widgets::{Cell, Row, Table},
+    widgets::{Block, Cell, Padding, Paragraph, Row, Table, Wrap},
 };
 
-use crate::state::Model;
+use crate::state::{Model, Pane};
 
 pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
     let rows = model.sessions.iter().map(|s| {
@@ -32,5 +34,56 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
     .row_highlight_style(Style::new().bg(Color::DarkGray))
     .header(header);
 
-    frame.render_stateful_widget(table, area, &mut model.session_state);
+    let layout =
+        Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)]).spacing(1);
+
+    let [left, right] = area.layout(&layout);
+
+    let left_block = match model.focused_pane {
+        Pane::Sessions => Block::bordered().border_style(Style::new().fg(Color::Blue)),
+        Pane::SessionMd => Block::bordered().border_style(Style::new().fg(Color::Reset)),
+    };
+
+    let left_inner = left_block.inner(left);
+
+    frame.render_widget(left_block, left);
+
+    frame.render_stateful_widget(&table, left_inner, &mut model.session_state);
+
+    match model.session_state.selected() {
+        Some(s) => {
+            let file = &model.sessions[s].file_path;
+
+            let block = match model.focused_pane {
+                Pane::Sessions => Block::bordered()
+                    .border_style(Style::new().fg(Color::Reset))
+                    .padding(Padding::uniform(2)),
+                Pane::SessionMd => Block::bordered()
+                    .padding(Padding::uniform(2))
+                    .border_style(Style::new().fg(Color::Blue)),
+            };
+
+            let inner = block.inner(right);
+
+            frame.render_widget(block, right);
+
+            match fs::read_to_string(file) {
+                Ok(file_content) => {
+                    frame.render_widget(
+                        Paragraph::new(file_content)
+                            .scroll((model.session_md_scroll, 0))
+                            .wrap(Wrap { trim: false }),
+                        inner,
+                    );
+                }
+                Err(e) => {
+                    frame.render_widget(
+                        Paragraph::new(e.to_string()).wrap(Wrap { trim: false }),
+                        inner,
+                    );
+                }
+            }
+        }
+        None => (),
+    }
 }
