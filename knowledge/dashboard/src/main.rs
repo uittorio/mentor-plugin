@@ -117,7 +117,7 @@ fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
 fn render_tabs(frame: &mut Frame, area: Rect, model: &Model) {
     let [_, center, _] = Layout::horizontal([
         Constraint::Fill(1),
-        Constraint::Length(30), // width of your tabs
+        Constraint::Length(30),
         Constraint::Fill(1),
     ])
     .areas(area);

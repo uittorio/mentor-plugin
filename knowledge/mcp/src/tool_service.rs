@@ -1,4 +1,4 @@
-use learning::file_storage::session_file_storage;
+use learning::file_storage::session_file_name;
 use learning::session::Session;
 use learning::session_storage::SessionStorage;
 use learning::topic::{QuestionDepth, Topic};
@@ -146,17 +146,18 @@ impl ToolService {
 
         let name = &params.0.name;
 
-        let session_file_storage_path = session_file_storage(name).map_err(|e| e.to_string())?;
-
-        let session = Session::new(&name, &session_file_storage_path, epoch_now);
+        let session = Session::new(&name, &session_file_name(name), epoch_now);
 
         self.session_storage
             .create(&session)
             .map_err(|e| e.to_string())?;
 
+        let session_file_path = session
+            .file_path()
+            .expect("path should be present as it was created now");
         let result = CreateSessionResult {
             session_id: session.id.0.to_string(),
-            session_file_path: session.file_path,
+            session_file_path,
         };
 
         serde_json::to_string(&result).map_err(|e| e.to_string())

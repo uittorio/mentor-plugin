@@ -52,8 +52,6 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
 
     match model.session_state.selected() {
         Some(s) => {
-            let file = &model.sessions[s].file_path;
-
             let block = match model.focused_pane {
                 Pane::Sessions => Block::bordered()
                     .border_style(Style::new().fg(Color::Reset))
@@ -67,10 +65,13 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
 
             frame.render_widget(block, right);
 
-            match fs::read_to_string(file) {
+            match &model.sessions[s]
+                .file_path()
+                .and_then(|f| fs::read_to_string(f))
+            {
                 Ok(file_content) => {
                     frame.render_widget(
-                        Paragraph::new(file_content)
+                        Paragraph::new(file_content.as_str())
                             .scroll((model.session_md_scroll, 0))
                             .wrap(Wrap { trim: false }),
                         inner,

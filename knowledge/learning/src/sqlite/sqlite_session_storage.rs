@@ -30,6 +30,7 @@ impl SqliteSessionStorage {
     }
 
     fn create_tables(&self) -> rusqlite::Result<()> {
+        // file_name is temporary null to avoid breaking changes. add not null once migration is completed
         let conn = self.0.lock().unwrap();
         conn.execute_batch(
             "BEGIN;
@@ -38,7 +39,8 @@ impl SqliteSessionStorage {
               name TEXT NOT NULL UNIQUE COLLATE NOCASE,
               created_at INTEGER NOT NULL DEFAULT (unixepoch()),
               modified_at INTEGER NOT NULL DEFAULT (unixepoch()),
-              file_path TEXT NOT NULL
+              file_name TEXT,
+              file_path TEXT
             );
             COMMIT;
             ",
@@ -51,7 +53,8 @@ impl SqliteSessionStorage {
             name: row.get(1)?,
             created_at: row.get::<_, i64>(2)? as u64,
             modified_at: row.get::<_, i64>(3)? as u64,
-            file_path: row.get(4)?,
+            file_name: row.get(4)?,
+            file_path: None,
         })
     }
 }
@@ -86,14 +89,15 @@ impl SessionStorage for SqliteSessionStorage {
 
         conn.execute(
             "
-            INSERT INTO sessions (id, name, created_at, modified_at, file_path)
-            VALUES (?1, ?2, ?3, ?4, ?5)
+            INSERT INTO sessions (id, name, created_at, modified_at, file_name, file_path)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6)
             ",
             params![
                 session.id,
                 session.name,
                 session.created_at as i64,
                 session.modified_at as i64,
+                session.file_name,
                 session.file_path
             ],
         )?;
@@ -105,7 +109,7 @@ impl SessionStorage for SqliteSessionStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_path
+            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name
             FROM sessions s
             WHERE s.id = (?1)
             ",
@@ -122,7 +126,7 @@ impl SessionStorage for SqliteSessionStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_path
+            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name
             FROM sessions s
             ",
         )?;
@@ -152,7 +156,8 @@ mod tests {
                 name: "session name".to_string(),
                 created_at: 1775764375,
                 modified_at: 1775764371,
-                file_path: "file/path.md".to_string(),
+                file_name: Some("path.md".to_string()),
+                file_path: None,
             })
             .unwrap();
 
@@ -161,7 +166,6 @@ mod tests {
         assert_eq!(inserted.name, "session name");
         assert_eq!(inserted.created_at, 1775764375);
         assert_eq!(inserted.modified_at, 1775764371);
-        assert_eq!(inserted.file_path, "file/path.md");
     }
 
     #[test]
@@ -174,7 +178,8 @@ mod tests {
                 name: "session name 1".to_string(),
                 created_at: 1775764375,
                 modified_at: 1775764371,
-                file_path: "file/path1.md".to_string(),
+                file_name: Some("path1.md".to_string()),
+                file_path: None,
             })
             .unwrap();
 
@@ -184,7 +189,8 @@ mod tests {
                 name: "session name 2".to_string(),
                 created_at: 1775764375,
                 modified_at: 1775764371,
-                file_path: "file/path2.md".to_string(),
+                file_name: Some("path2.md".to_string()),
+                file_path: None,
             })
             .unwrap();
 

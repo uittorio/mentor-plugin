@@ -1,0 +1,8 @@
+[package]
+name = "migrations"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+learning = { path = "../learning" }
+rusqlite = {version = "0.39.0"}
