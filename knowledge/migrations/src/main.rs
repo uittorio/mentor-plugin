@@ -4,13 +4,24 @@ use learning::sqlite::sqlite_storage::db_path;
 use rusqlite::{Connection, params};
 
 fn main() {
-    migrate_session_file_path_to_file_name();
+    // session_file_path_to_file_name();
+    make_file_name_required();
 }
 
 // 0.0.29 onwards
-fn migrate_session_file_path_to_file_name() {
+fn session_file_path_to_file_name() {
     let path = db_path().unwrap();
     let connection = Connection::open(path).unwrap();
+
+    connection
+        .execute(
+            "
+        ALTER TABLE sessions ADD COLUMN file_name TEXT;
+
+        ",
+            [],
+        )
+        .unwrap();
 
     let mut statement = connection
         .prepare(
@@ -54,6 +65,33 @@ fn migrate_session_file_path_to_file_name() {
 
         ",
             [],
+        )
+        .unwrap();
+}
+
+// 0.0.30 onwards
+fn make_file_name_required() {
+    let path = db_path().unwrap();
+    let connection = Connection::open(path).unwrap();
+
+    connection
+        .execute_batch(
+            "BEGIN;
+        CREATE TABLE IF NOT EXISTS sessions_new (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+          created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+          modified_at INTEGER NOT NULL DEFAULT (unixepoch()),
+          file_name TEXT NOT NULL
+        );
+
+        INSERT INTO sessions_new SELECT * FROM sessions;
+
+        DROP TABLE sessions;
+
+        ALTER TABLE sessions_new RENAME TO sessions;
+        COMMIT;
+        ",
         )
         .unwrap();
 }

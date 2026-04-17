@@ -14,7 +14,6 @@ pub struct Session {
     pub name: String,
     pub created_at: u64,
     pub file_name: Option<String>,
-    pub file_path: Option<String>,
     pub modified_at: u64,
 }
 
@@ -24,7 +23,6 @@ impl Session {
             id: SessionId::new(),
             name: name.to_string(),
             file_name: Some(file_name.to_string()),
-            file_path: None,
             created_at,
             modified_at: created_at,
         }
