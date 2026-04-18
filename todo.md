@@ -2,7 +2,7 @@
 - WINDOWS support.
 
 ## Reflections on development
-- migration project is not automate. a lot of manual steps.
+- migration project is not automated. a lot of manual steps.
 
 ## Future
 - keep going with VISION
