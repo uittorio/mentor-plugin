@@ -4,7 +4,7 @@ use learning::sqlite::sqlite_storage::db_path;
 use rusqlite::{Connection, params};
 
 fn main() {
-    // session_file_path_to_file_name();
+    session_file_path_to_file_name();
     make_file_name_required();
 }
 

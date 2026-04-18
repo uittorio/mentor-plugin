@@ -55,10 +55,11 @@ rm -rf ~/.local/share/agent-mentor
 
 ## OpenCode
 
-Remove the skill:
+Remove the skills:
 ```bash
 
 rm -rf ~/.config/opencode/skills/mentor+
+rm -rf ~/.config/opencode/skills/mentor+summarise
 ```
 
 Remove the MCP server script:
@@ -93,6 +94,7 @@ Managed by the Claude Code plugin system. Files land wherever Claude Code stores
 | File | Destination |
 |------|-------------|
 | `SKILL.md` | `~/.config/opencode/skills/mentor+/SKILL.md` |
+| `SKILL.md` | `~/.config/opencode/skills/mentor+summarise/SKILL.md` |
 | `mcp-server.sh` | `~/.config/opencode/agent-mentor/mcp-server.sh` |
 | MCP config entry | added to `~/.config/opencode/opencode.json` |
 | MCP binary (downloaded on first run) | `~/.local/bin/mentor-mcp` |
