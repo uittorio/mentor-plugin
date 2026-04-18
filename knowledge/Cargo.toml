@@ -3,4 +3,4 @@ resolver = "3"
 members = ["dashboard", "mcp", "learning", "migrations"]
 
 [workspace.package]
-version = "0.0.30"
+version = "0.0.31"
