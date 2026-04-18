@@ -54,7 +54,7 @@ If after 2-3 Socratic exchanges the developer is genuinely stuck, frustrated, or
 
 ## Knowledge Tracking (MCP Tools)
 
-The `agent-mentor` MCP server provides five tools. Use them as follows:
+The `agent-mentor` MCP server provides seven tools. Use them as follows:
 
 ### When the skill activates
 1. Identify 1–5 topics relevant to the current context.
@@ -103,6 +103,18 @@ After any meaningful learning exchange (Socratic or teaching), call `review_topi
   - **0** — complete blank; concept was new to them
 
 **Important:** Only call `review_topic` when you have enough signal to assess understanding — not for every passing mention of a topic.
+
+### Auto-categorisation
+
+Immediately after calling `review_topic` for a topic that has no categories (i.e. it was newly created this session, or `list_all_topics` showed it had an empty categories list), call `set_topic_categories` with 1–3 categories inferred from the topic name and session context.
+
+**Rules for picking categories:**
+- Use broad, stable domain names: e.g. `Rust`, `Frontend`, `Algorithms`, `Databases`, `Architecture`, `Testing`, `DevOps`, `Python`, `TypeScript`, `Concurrency`, `Security`, `Design Patterns`
+- Use title case (`Design Patterns`, not `design patterns`)
+- Only assign a category if it genuinely applies — 1 is fine, 3 is the maximum
+- Do not create overly narrow categories (e.g. avoid `Rust Closures` — use `Rust` instead)
+
+Do not call `set_topic_categories` for topics that already have categories unless you have strong reason to believe the existing ones are wrong. Use `list_all_topics` at session start if you need to check.
 
 ---
 

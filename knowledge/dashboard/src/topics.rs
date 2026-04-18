@@ -7,43 +7,60 @@ use ratatui::{
 };
 
 use crate::state::Model;
+use learning::topic::QuestionDepth;
 
 pub fn render_topics(frame: &mut Frame, area: Rect, model: &mut Model) {
-    let now_epoc = std::time::SystemTime::now()
+    let now_epoch = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|t| t.as_secs())
-        .unwrap();
+        .unwrap_or(0);
 
     let rows = model.topics.iter().map(|t| {
-        let next_review = t.reviewed_at + (t.interval * 60 * 60 * 24) as u64;
-        let next_review_value = DateTime::from_timestamp_secs(next_review as i64)
-            .unwrap()
-            .format("%b %e %T %Y")
-            .to_string();
+        let next_review = t.reviewed_at + (t.interval as u64 * 86400);
+        let is_overdue = next_review < now_epoch;
 
-        let next_review_formatted = if next_review < now_epoc {
-            format!("{} (overdue)", next_review_value)
-        } else {
-            next_review_value
+        let next_str = {
+            let formatted = DateTime::from_timestamp_secs(next_review as i64)
+                .unwrap()
+                .format("%b %e %T %Y")
+                .to_string();
+            if is_overdue { format!("{} (overdue)", formatted) } else { formatted }
         };
+
+        let cats = if t.categories.is_empty() {
+            "-".to_string()
+        } else {
+            t.categories.join(", ")
+        };
+
+        let row_style = match (is_overdue, t.question_depth()) {
+            (true, _) => Style::new().fg(Color::Red),
+            (_, QuestionDepth::Skip) => Style::new().fg(Color::Green),
+            (_, QuestionDepth::Light) => Style::new().fg(Color::Yellow),
+            _ => Style::new(),
+        };
+
         Row::new([
-            Cell::from(t.name.as_str()),
-            Cell::from(t.ease_factor.to_string()),
+            Cell::from(t.name.clone()),
+            Cell::from(cats),
+            Cell::from(format!("{:.2}", t.ease_factor)),
             Cell::from(t.repetitions.to_string()),
             Cell::from(
                 DateTime::from_timestamp_secs(t.reviewed_at as i64)
                     .unwrap()
-                    .format("%b %e %T %Y")
+                    .format("%b %e %Y")
                     .to_string(),
             ),
-            Cell::from(next_review_formatted),
+            Cell::from(next_str),
         ])
+        .style(row_style)
     });
 
     let header = Row::new(vec![
         Cell::from("Topic"),
-        Cell::from("Ease factor"),
-        Cell::from("Repetitions"),
+        Cell::from("Categories"),
+        Cell::from("Ease"),
+        Cell::from("Reps"),
         Cell::from("Last review"),
         Cell::from("Next review"),
     ])
@@ -53,11 +70,12 @@ pub fn render_topics(frame: &mut Frame, area: Rect, model: &mut Model) {
     let table = Table::new(
         rows,
         [
-            Constraint::Percentage(40),
-            Constraint::Percentage(9),
-            Constraint::Percentage(9),
-            Constraint::Percentage(18),
-            Constraint::Percentage(24),
+            Constraint::Percentage(25),
+            Constraint::Percentage(22),
+            Constraint::Percentage(6),
+            Constraint::Percentage(5),
+            Constraint::Percentage(14),
+            Constraint::Percentage(28),
         ],
     )
     .row_highlight_style(Style::new().bg(Color::DarkGray))

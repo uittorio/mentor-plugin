@@ -15,10 +15,12 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Tabs};
 use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend, style::Style};
 
+use crate::categories::render_categories;
 use crate::sessions::render_sessions;
 use crate::state::{Message, Model, View, update};
 use crate::topics::render_topics;
 
+mod categories;
 mod sessions;
 mod state;
 mod topics;
@@ -71,6 +73,7 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
                     KeyCode::Char('q') => break,
                     KeyCode::Char('s') => update(&mut model, Message::ShowSessionView),
                     KeyCode::Char('t') => update(&mut model, Message::ShowTopicView),
+                    KeyCode::Char('c') => update(&mut model, Message::ShowCategoriesView),
                     KeyCode::Char('j') => update(&mut model, Message::NavigateDown),
                     KeyCode::Char('k') => update(&mut model, Message::NavigateUp),
                     KeyCode::Char('h') => update(&mut model, Message::PrevPane),
@@ -93,7 +96,7 @@ fn render(frame: &mut Frame, model: &mut Model) {
     let title = Line::from_iter([
         Span::from("Mentor dashboard").bold(),
         Span::from(
-            "((q) to quit, (s) sessions, (t) topics, (j,k) navigate up and down, (h,l) focus pane)",
+            " ((q) quit, (t) topics, (c) categories, (s) sessions, (j/k) navigate, (h/l) pane)",
         ),
     ]);
 
@@ -110,6 +113,7 @@ fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
 
     match model.selected_view {
         View::Topics => render_topics(frame, inner, model),
+        View::Categories => render_categories(frame, inner, model),
         View::Sessions => render_sessions(frame, inner, model),
     };
 }
@@ -117,15 +121,21 @@ fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
 fn render_tabs(frame: &mut Frame, area: Rect, model: &Model) {
     let [_, center, _] = Layout::horizontal([
         Constraint::Fill(1),
-        Constraint::Length(30),
+        Constraint::Length(40),
         Constraint::Fill(1),
     ])
     .areas(area);
 
-    let tabs = Tabs::new(vec!["Topics", "Sessions"])
+    let selected = match model.selected_view {
+        View::Topics => 0,
+        View::Categories => 1,
+        View::Sessions => 2,
+    };
+
+    let tabs = Tabs::new(vec!["Topics", "Categories", "Sessions"])
         .style(Color::White)
         .highlight_style(Style::default().magenta().on_black().bold())
-        .select(model.selected_view as usize)
+        .select(selected)
         .divider("|")
         .padding(" ", " ");
     frame.render_widget(tabs, center);
@@ -135,7 +145,7 @@ fn has_version_argument(args: &mut Args) -> bool {
     return args.any(|a| a == "--version" || a == "-v");
 }
 
-fn print_version() -> () {
+fn print_version() {
     let version = env!("CARGO_PKG_VERSION");
     println!("{}", version);
 }

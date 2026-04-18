@@ -15,6 +15,7 @@ pub struct Topic {
     // it increases with higher quality
     pub ease_factor: f32,
     pub reviewed_at: u64,
+    pub categories: Vec<String>,
 }
 
 impl Topic {
@@ -42,6 +43,7 @@ impl Topic {
             interval: 1,
             ease_factor: 2.5,
             reviewed_at: reviewed_at,
+            categories: vec![],
         }
     }
 }

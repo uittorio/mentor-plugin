@@ -32,6 +32,7 @@ pub fn sm2(topic: &Topic, quality: u32, review_date: u64) -> Topic {
         interval: updated_interval,
         ease_factor: updated_ease_factor,
         reviewed_at: review_date,
+        categories: topic.categories.clone(),
     }
 }
 
@@ -195,6 +196,7 @@ mod tests {
             interval: 10,
             ease_factor: 1.5,
             reviewed_at: 10000,
+            categories: vec![],
         }
     }
 }

@@ -13,6 +13,8 @@ use rmcp::{
 use std::time::SystemTimeError;
 
 use crate::create_session::{CreateSessionParams, CreateSessionResult};
+use crate::list_all_topics::{ListAllTopicsParams, TopicEntry};
+use crate::set_topic_categories::{SetTopicCategoriesParams, SetTopicCategoriesResult};
 use crate::{
     get_topics::GetTopicsParams,
     review_topic::{ReviewTopicParams, ReviewTopicResult},
@@ -133,6 +135,42 @@ impl ToolService {
             .collect::<Vec<TopicCandidate>>();
 
         serde_json::to_string(&results).map_err(|e| e.to_string())
+    }
+
+    #[tool(
+        description = "Assign one or more categories to a topic, replacing any previously assigned categories. Creates categories that do not yet exist. Call this after review_topic to keep topics organised."
+    )]
+    async fn set_topic_categories(
+        &self,
+        params: Parameters<SetTopicCategoriesParams>,
+    ) -> Result<String, String> {
+        let topic_name = normalise_topic(&params.0.topic);
+        self.topic_storage
+            .set_topic_categories(&topic_name, &params.0.categories)
+            .map_err(|e| e.to_string())?;
+        let result = SetTopicCategoriesResult {
+            topic: topic_name,
+            categories: params.0.categories,
+        };
+        serde_json::to_string(&result).map_err(|e| e.to_string())
+    }
+
+    #[tool(
+        description = "Return all topics with their assigned categories. Use this to get a full picture of what has been studied, especially before running a categorisation pass."
+    )]
+    async fn list_all_topics(
+        &self,
+        _params: Parameters<ListAllTopicsParams>,
+    ) -> Result<String, String> {
+        let topics = self.topic_storage.get_all().map_err(|e| e.to_string())?;
+        let entries = topics
+            .into_iter()
+            .map(|t| TopicEntry {
+                name: t.name,
+                categories: t.categories,
+            })
+            .collect::<Vec<_>>();
+        serde_json::to_string(&entries).map_err(|e| e.to_string())
     }
 
     #[tool(

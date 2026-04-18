@@ -29,7 +29,8 @@ impl SqliteTopicStorage {
     fn create_tables(&self) -> rusqlite::Result<()> {
         let conn = self.0.lock().unwrap();
         conn.execute_batch(
-            "BEGIN;
+            "PRAGMA foreign_keys = ON;
+            BEGIN;
             CREATE TABLE IF NOT EXISTS topics (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -39,18 +40,32 @@ impl SqliteTopicStorage {
               repetitions INTEGER NOT NULL DEFAULT 0,
               reviewed_at INTEGER NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS categories (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT NOT NULL UNIQUE COLLATE NOCASE
+            );
+            CREATE TABLE IF NOT EXISTS topic_categories (
+              topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+              category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+              PRIMARY KEY (topic_id, category_id)
+            );
             COMMIT;
             ",
         )
     }
 
     fn map_row_to_topic(&self, row: &Row) -> Result<Topic, rusqlite::Error> {
+        let categories_str: Option<String> = row.get(5)?;
+        let categories = categories_str
+            .map(|s| s.split('|').map(String::from).collect())
+            .unwrap_or_default();
         Ok(Topic {
             name: row.get(0)?,
             repetitions: row.get(1)?,
             interval: row.get(2)?,
             ease_factor: row.get(3)?,
             reviewed_at: row.get::<_, i64>(4)? as u64,
+            categories,
         })
     }
 }
@@ -60,9 +75,13 @@ impl TopicStorage for SqliteTopicStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at
+            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at,
+                   GROUP_CONCAT(c.name, '|') as categories
             FROM topics t
+            LEFT JOIN topic_categories tc ON tc.topic_id = t.id
+            LEFT JOIN categories c ON c.id = tc.category_id
             WHERE ((?1) - t.reviewed_at) / 86400 >= t.interval_days
+            GROUP BY t.id
             ORDER BY t.reviewed_at ASC
             ",
         )?;
@@ -78,8 +97,13 @@ impl TopicStorage for SqliteTopicStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at
+            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at,
+                   GROUP_CONCAT(c.name, '|') as categories
             FROM topics t
+            LEFT JOIN topic_categories tc ON tc.topic_id = t.id
+            LEFT JOIN categories c ON c.id = tc.category_id
+            GROUP BY t.id
+            ORDER BY t.name COLLATE NOCASE
             ",
         )?;
 
@@ -94,9 +118,13 @@ impl TopicStorage for SqliteTopicStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at
+            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at,
+                   GROUP_CONCAT(c.name, '|') as categories
             FROM topics t
+            LEFT JOIN topic_categories tc ON tc.topic_id = t.id
+            LEFT JOIN categories c ON c.id = tc.category_id
             WHERE t.name = (?1)
+            GROUP BY t.id
             ",
         )?;
 
@@ -130,6 +158,55 @@ impl TopicStorage for SqliteTopicStorage {
         )?;
 
         Ok(())
+    }
+
+    fn set_topic_categories(&self, topic_name: &str, categories: &[String]) -> Result<(), StorageError> {
+        let conn = self.0.lock().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+
+        let topic_id: i64 = conn.query_row(
+            "SELECT id FROM topics WHERE name = ?1 COLLATE NOCASE",
+            [topic_name],
+            |row| row.get(0),
+        )?;
+
+        conn.execute(
+            "DELETE FROM topic_categories WHERE topic_id = ?1",
+            [topic_id],
+        )?;
+
+        for cat in categories {
+            let cat = cat.trim();
+            if cat.is_empty() {
+                continue;
+            }
+            conn.execute(
+                "INSERT OR IGNORE INTO categories (name) VALUES (?1)",
+                [cat],
+            )?;
+            let cat_id: i64 = conn.query_row(
+                "SELECT id FROM categories WHERE name = ?1 COLLATE NOCASE",
+                [cat],
+                |row| row.get(0),
+            )?;
+            conn.execute(
+                "INSERT OR IGNORE INTO topic_categories (topic_id, category_id) VALUES (?1, ?2)",
+                rusqlite::params![topic_id, cat_id],
+            )?;
+        }
+
+        Ok(())
+    }
+
+    fn get_categories(&self) -> Result<Vec<String>, StorageError> {
+        let conn = self.0.lock().unwrap();
+        let mut statement = conn.prepare(
+            "SELECT name FROM categories ORDER BY name COLLATE NOCASE",
+        )?;
+        let cats = statement
+            .query_map([], |row| row.get(0))?
+            .collect::<Result<Vec<String>, rusqlite::Error>>()?;
+        Ok(cats)
     }
 }
 
