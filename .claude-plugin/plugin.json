@@ -1,6 +1,6 @@
 {
   "name": "mentor-plugin",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "description": "Socratic mentor mode — guides learning without giving direct answers. Activates when the user is learning a new language or technology.",
   "author": {
     "name": "uittorio",
