@@ -9,30 +9,29 @@ use learning::session_storage::SessionStorage;
 use learning::sqlite::sqlite_session_storage::SqliteSessionStorage;
 use learning::sqlite::sqlite_topic_storage::SqliteTopicStorage;
 use learning::topic_storage::TopicStorage;
-use ratatui::layout::{Layout, Offset, Rect};
-use ratatui::style::{Color, Stylize};
+use ratatui::layout::{Layout, Rect};
+use ratatui::style::Stylize;
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Tabs};
-use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend, style::Style};
+use ratatui::widgets::Block;
+use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend};
 
-use crate::categories::render_categories;
 use crate::sessions::render_sessions;
-use crate::state::{Message, Model, View, update};
-use crate::topics::render_topics;
+use crate::state::{
+    Message, Model, View, Zone, navigate_down, navigate_left, navigate_right, navigate_up,
+    update,
+};
+use crate::topics_view::{epoch_now, render_topics_view};
 
-mod categories;
 mod sessions;
 mod state;
-mod topics;
+mod topics_view;
 
 fn main() -> color_eyre::Result<()> {
     let mut args = std::env::args();
-
     if has_version_argument(&mut args) {
         print_version();
         return Ok(());
     }
-
     color_eyre::install()?;
     let mut terminal = ratatui::init();
     app(&mut terminal)?;
@@ -45,44 +44,62 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
     let session_storage = SqliteSessionStorage::init()?;
 
     let mut model = Model::new();
-
     update(&mut model, Message::UpdateTopics(topic_storage.get_all()?));
-    update(
-        &mut model,
-        Message::UpdateSessions(session_storage.get_all()?),
-    );
+    update(&mut model, Message::UpdateSessions(session_storage.get_all()?));
 
-    let mut current_time = Instant::now();
+    let mut last_refresh = Instant::now();
 
     loop {
-        if current_time.elapsed() >= Duration::from_secs(5) {
+        if last_refresh.elapsed() >= Duration::from_secs(5) {
             update(&mut model, Message::UpdateTopics(topic_storage.get_all()?));
-            update(
-                &mut model,
-                Message::UpdateSessions(session_storage.get_all()?),
-            );
-            current_time = Instant::now();
-        };
+            update(&mut model, Message::UpdateSessions(session_storage.get_all()?));
+            last_refresh = Instant::now();
+        }
 
         terminal.draw(|frame| render(frame, &mut model))?;
-        let event = crossterm::event::poll(Duration::from_millis(50))?;
 
-        match event {
-            true => match crossterm::event::read()? {
-                Event::Key(key_event) => match key_event.code {
-                    KeyCode::Char('q') => break,
-                    KeyCode::Char('s') => update(&mut model, Message::ShowSessionView),
-                    KeyCode::Char('t') => update(&mut model, Message::ShowTopicView),
-                    KeyCode::Char('c') => update(&mut model, Message::ShowCategoriesView),
-                    KeyCode::Char('j') => update(&mut model, Message::NavigateDown),
-                    KeyCode::Char('k') => update(&mut model, Message::NavigateUp),
-                    KeyCode::Char('h') => update(&mut model, Message::PrevPane),
-                    KeyCode::Char('l') => update(&mut model, Message::NextPane),
-                    _ => {}
-                },
-                _ => {}
-            },
-            _ => {}
+        if crossterm::event::poll(Duration::from_millis(50))? {
+            if let Event::Key(key) = crossterm::event::read()? {
+                match model.selected_view {
+                    View::Topics => match key.code {
+                        KeyCode::Char('q') => break,
+                        KeyCode::Char('s') => update(&mut model, Message::ShowSessionView),
+                        KeyCode::Char('1') => update(&mut model, Message::FocusZone(Zone::Stats)),
+                        KeyCode::Char('2') => {
+                            update(&mut model, Message::FocusZone(Zone::Categories))
+                        }
+                        KeyCode::Char('3') => update(&mut model, Message::FocusZone(Zone::Topics)),
+                        KeyCode::Esc => update(&mut model, Message::ExitZone),
+                        KeyCode::Char('r') => update(&mut model, Message::ResetFilters),
+                        KeyCode::Char(' ') | KeyCode::Enter => {
+                            update(&mut model, Message::ToggleFilter)
+                        }
+                        KeyCode::Char('j') | KeyCode::Down => {
+                            let now = epoch_now();
+                            navigate_down(&mut model, now);
+                        }
+                        KeyCode::Char('k') | KeyCode::Up => navigate_up(&mut model),
+                        KeyCode::Char('h') | KeyCode::Left => navigate_left(&mut model),
+                        KeyCode::Char('l') | KeyCode::Right => navigate_right(&mut model),
+                        _ => {}
+                    },
+                    View::Sessions => match key.code {
+                        KeyCode::Char('q') => break,
+                        KeyCode::Char('t') => update(&mut model, Message::ShowTopicView),
+                        KeyCode::Char('j') | KeyCode::Down => {
+                            navigate_down(&mut model, epoch_now())
+                        }
+                        KeyCode::Char('k') | KeyCode::Up => navigate_up(&mut model),
+                        KeyCode::Char('h') | KeyCode::Left => {
+                            update(&mut model, Message::PrevPane)
+                        }
+                        KeyCode::Char('l') | KeyCode::Right => {
+                            update(&mut model, Message::NextPane)
+                        }
+                        _ => {}
+                    },
+                }
+            }
         }
     }
 
@@ -90,20 +107,28 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
 }
 
 fn render(frame: &mut Frame, model: &mut Model) {
-    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
-    let [top, main] = frame.area().layout(&layout);
+    let [header, main] =
+        Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).areas(frame.area());
+
+    let (hint, view_indicator) = match model.selected_view {
+        View::Topics => (
+            " (q) quit · (s) sessions · (1) stats · (2) categories · (3) topics · (Space) filter · (r) reset · (Esc) unfocus",
+            " Topics ",
+        ),
+        View::Sessions => (
+            " (q) quit · (t) topics · (j/k) navigate · (h/l) pane",
+            " Sessions ",
+        ),
+    };
 
     let title = Line::from_iter([
-        Span::from("Mentor dashboard").bold(),
-        Span::from(
-            " ((q) quit, (t) topics, (c) categories, (s) sessions, (j/k) navigate, (h/l) pane)",
-        ),
+        Span::from("Mentor").bold(),
+        Span::from(view_indicator).magenta().bold(),
+        Span::from(hint),
     ]);
-
-    frame.render_widget(title.centered(), top);
+    frame.render_widget(title, header);
 
     render_content(frame, main, model);
-    render_tabs(frame, main + Offset::new(1, 0), model);
 }
 
 fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
@@ -112,40 +137,15 @@ fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
     frame.render_widget(block, area);
 
     match model.selected_view {
-        View::Topics => render_topics(frame, inner, model),
-        View::Categories => render_categories(frame, inner, model),
+        View::Topics => render_topics_view(frame, inner, model),
         View::Sessions => render_sessions(frame, inner, model),
-    };
-}
-
-fn render_tabs(frame: &mut Frame, area: Rect, model: &Model) {
-    let [_, center, _] = Layout::horizontal([
-        Constraint::Fill(1),
-        Constraint::Length(40),
-        Constraint::Fill(1),
-    ])
-    .areas(area);
-
-    let selected = match model.selected_view {
-        View::Topics => 0,
-        View::Categories => 1,
-        View::Sessions => 2,
-    };
-
-    let tabs = Tabs::new(vec!["Topics", "Categories", "Sessions"])
-        .style(Color::White)
-        .highlight_style(Style::default().magenta().on_black().bold())
-        .select(selected)
-        .divider("|")
-        .padding(" ", " ");
-    frame.render_widget(tabs, center);
+    }
 }
 
 fn has_version_argument(args: &mut Args) -> bool {
-    return args.any(|a| a == "--version" || a == "-v");
+    args.any(|a| a == "--version" || a == "-v")
 }
 
 fn print_version() {
-    let version = env!("CARGO_PKG_VERSION");
-    println!("{}", version);
+    println!("{}", env!("CARGO_PKG_VERSION"));
 }
