@@ -6,6 +6,7 @@ use rusqlite::{Connection, params};
 fn main() {
     session_file_path_to_file_name();
     make_file_name_required();
+    add_categories_to_topics();
 }
 
 // 0.0.29 onwards
@@ -92,6 +93,21 @@ fn make_file_name_required() {
         ALTER TABLE sessions_new RENAME TO sessions;
         COMMIT;
         ",
+        )
+        .unwrap();
+}
+
+// 0.0.32 onwards
+fn add_categories_to_topics() {
+    let path = db_path().unwrap();
+    let connection = Connection::open(path).unwrap();
+
+    connection
+        .execute(
+            "
+        ALTER TABLE topics ADD COLUMN categories TEXT NOT NULL DEFAULT '';
+        ",
+            [],
         )
         .unwrap();
 }

@@ -15,5 +15,4 @@
 
 ## Bugs
 - if you don't do consolidate manually it will loose the progress, you could close the session and consolidation does not happen
-- Days before reviewing does not seems to be useful. never actually use it this way. I never reviewed an old topic.
 - Some topics review where not useful (like what is a good session summary, this is basically business logic based). I would love the topic to be more generic than specific to my business case.

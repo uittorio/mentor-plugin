@@ -32,6 +32,7 @@ pub fn sm2(topic: &Topic, quality: u32, review_date: u64) -> Topic {
         interval: updated_interval,
         ease_factor: updated_ease_factor,
         reviewed_at: review_date,
+        categories: topic.categories.clone(),
     }
 }
 
@@ -42,6 +43,7 @@ fn ease_factor(quality: u32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::topic::mocked_topic;
 
     #[test]
     fn update_last_review_date() {
@@ -186,15 +188,5 @@ mod tests {
             "expected ease factor between 2.95 and 2.97 but got {}",
             ef
         );
-    }
-
-    fn mocked_topic() -> Topic {
-        Topic {
-            name: "test topic".to_string(),
-            repetitions: 1,
-            interval: 10,
-            ease_factor: 1.5,
-            reviewed_at: 10000,
-        }
     }
 }

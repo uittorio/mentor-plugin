@@ -13,6 +13,8 @@ use rmcp::{
 use std::time::SystemTimeError;
 
 use crate::create_session::{CreateSessionParams, CreateSessionResult};
+use crate::get_all_topics::TopicResult;
+use crate::update_topic_categories::{UpdateTopicCategoriesParams, UpdateTopicCategoriesResult};
 use crate::{
     get_topics::GetTopicsParams,
     review_topic::{ReviewTopicParams, ReviewTopicResult},
@@ -63,6 +65,20 @@ impl ToolService {
         serde_json::to_string(&topic_names).map_err(|e| e.to_string())
     }
 
+    #[tool(description = "Get all topics")]
+    async fn get_all_topics(&self) -> Result<String, String> {
+        let topics = self.topic_storage.get_all().map_err(|e| e.to_string())?;
+        let topic_names = topics
+            .into_iter()
+            .map(|x| TopicResult {
+                name: x.name,
+                categories: x.categories.0.iter().map(|c| c.name.clone()).collect(),
+            })
+            .collect::<Vec<TopicResult>>();
+
+        serde_json::to_string(&topic_names).map_err(|e| e.to_string())
+    }
+
     #[tool(
         description = "Returns the recommended question depth (full/light/skip) for a single topic. Call once per topic after resolving the canonical name with get_topics."
     )]
@@ -108,6 +124,38 @@ impl ToolService {
         let result = ReviewTopicResult {
             topic: updated_topic.name,
             next_review_in_days: updated_topic.interval,
+        };
+
+        serde_json::to_string(&result).map_err(|e| e.to_string())
+    }
+
+    #[tool(description = "Update the topic's categories.")]
+    async fn update_topic_categories(
+        &self,
+        params: Parameters<UpdateTopicCategoriesParams>,
+    ) -> Result<String, String> {
+        let topic_name = normalise_topic(&params.0.topic);
+
+        let topic = self
+            .topic_storage
+            .get(&topic_name)
+            .map_err(|e| e.to_string())?
+            .ok_or("Topic not found")?;
+
+        let updated_topic = topic.add_categories(params.0.categories);
+
+        self.topic_storage
+            .upsert(&updated_topic)
+            .map_err(|e| e.to_string())?;
+
+        let result = UpdateTopicCategoriesResult {
+            topic: updated_topic.name,
+            categories: updated_topic
+                .categories
+                .0
+                .iter()
+                .map(|c| c.name.clone())
+                .collect(),
         };
 
         serde_json::to_string(&result).map_err(|e| e.to_string())

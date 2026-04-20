@@ -1,3 +1,4 @@
+pub mod category;
 pub mod file_storage;
 pub mod session;
 pub mod session_storage;

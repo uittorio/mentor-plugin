@@ -26,6 +26,12 @@ pub struct TopicCandidate {
     pub days_since_last_review: u64,
 }
 
+#[derive(Deserialize)]
+pub struct TopicResult {
+    pub name: String,
+    pub categories: Vec<String>,
+}
+
 struct TestClientWrapper {
     client: RunningService<RoleClient, ()>,
     _db_folder: TempDir,
@@ -46,6 +52,24 @@ async fn create_client() -> TestClientWrapper {
     }
 }
 
+async fn call_tool(client: &TestClientWrapper, tool_name: String, v: &Value) -> CallToolResult {
+    client
+        .client
+        .call_tool(
+            CallToolRequestParams::new(tool_name).with_arguments(v.as_object().unwrap().clone()),
+        )
+        .await
+        .unwrap()
+}
+
+async fn call_tool_no_arguments(client: &TestClientWrapper, tool_name: String) -> CallToolResult {
+    client
+        .client
+        .call_tool(CallToolRequestParams::new(tool_name))
+        .await
+        .unwrap()
+}
+
 #[tokio::test]
 async fn list_tools() {
     let client = create_client().await;
@@ -58,8 +82,10 @@ async fn list_tools() {
 
     let mut expected = vec![
         "get_topics",
+        "get_all_topics",
         "topic_depth",
         "review_topic",
+        "update_topic_categories",
         "get_topic_candidates",
         "create_session",
     ];
@@ -68,15 +94,6 @@ async fn list_tools() {
     assert_eq!(names, expected);
 }
 
-async fn call_tool(client: &TestClientWrapper, tool_name: String, v: &Value) -> CallToolResult {
-    client
-        .client
-        .call_tool(
-            CallToolRequestParams::new(tool_name).with_arguments(v.as_object().unwrap().clone()),
-        )
-        .await
-        .unwrap()
-}
 #[tokio::test]
 async fn update_topic_and_list_them() {
     let client = create_client().await;
@@ -94,6 +111,40 @@ async fn update_topic_and_list_them() {
     });
 
     call_tool(&client, "review_topic".to_string(), &topic_update).await;
+
+    let search = json!({
+        "search": "some",
+    });
+
+    let result = call_tool(&client, "get_topics".to_string(), &search).await;
+
+    let topics = result.into_typed::<Vec<String>>().unwrap();
+
+    assert_eq!(topics, vec!["some topic"])
+}
+
+#[tokio::test]
+async fn update_topic_categories() {
+    let client = create_client().await;
+
+    let topic = json!({
+        "topic": "some topic",
+        "quality": 3,
+    });
+
+    call_tool(&client, "review_topic".to_string(), &topic).await;
+
+    let topic_update_categories = json!({
+        "topic": "some topic",
+        "categories": ["one", "two", "Two"]
+    });
+
+    call_tool(
+        &client,
+        "update_topic_categories".to_string(),
+        &topic_update_categories,
+    )
+    .await;
 
     let search = json!({
         "search": "some",
@@ -149,6 +200,30 @@ async fn get_topic_candidates() {
     let candidates = result.into_typed::<Vec<TopicCandidate>>().unwrap();
 
     assert_eq!(candidates.len(), 0);
+}
+
+#[tokio::test]
+async fn get_all_topics() {
+    let client = create_client().await;
+
+    let topic1 = json!({
+        "topic": "some topic",
+        "quality": 0
+    });
+
+    let topic2 = json!({
+        "topic": "another topic",
+        "quality": 0
+    });
+
+    call_tool(&client, "review_topic".to_string(), &topic1).await;
+    call_tool(&client, "review_topic".to_string(), &topic2).await;
+
+    let result = call_tool_no_arguments(&client, "get_all_topics".to_string()).await;
+
+    let topics = result.into_typed::<Vec<TopicResult>>().unwrap();
+
+    assert_eq!(topics.len(), 2);
 }
 
 #[tokio::test]

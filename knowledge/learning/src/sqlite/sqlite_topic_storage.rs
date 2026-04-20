@@ -1,9 +1,12 @@
 use std::sync::Mutex;
 
-use rusqlite::{Connection, OptionalExtension, Row, params};
+use rusqlite::types::{FromSql, ToSqlOutput};
+use rusqlite::{Connection, OptionalExtension, Row, ToSql, params};
 
+use crate::category::Category;
 use crate::sqlite::sqlite_storage::db_path;
 use crate::storage_error::StorageError;
+use crate::topic::TopicCategories;
 use crate::{topic::Topic, topic_storage::TopicStorage};
 
 pub struct SqliteTopicStorage(Mutex<Connection>);
@@ -29,7 +32,8 @@ impl SqliteTopicStorage {
     fn create_tables(&self) -> rusqlite::Result<()> {
         let conn = self.0.lock().unwrap();
         conn.execute_batch(
-            "BEGIN;
+            "PRAGMA foreign_keys = ON;
+            BEGIN;
             CREATE TABLE IF NOT EXISTS topics (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -37,8 +41,10 @@ impl SqliteTopicStorage {
               ease_factor REAL NOT NULL DEFAULT 2.5,
               interval_days INTEGER NOT NULL DEFAULT 0,
               repetitions INTEGER NOT NULL DEFAULT 0,
-              reviewed_at INTEGER NOT NULL
+              reviewed_at INTEGER NOT NULL,
+              categories TEXT NOT NULL
             );
+
             COMMIT;
             ",
         )
@@ -51,6 +57,7 @@ impl SqliteTopicStorage {
             interval: row.get(2)?,
             ease_factor: row.get(3)?,
             reviewed_at: row.get::<_, i64>(4)? as u64,
+            categories: row.get(5)?,
         })
     }
 }
@@ -60,7 +67,7 @@ impl TopicStorage for SqliteTopicStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at
+            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at, t.categories
             FROM topics t
             WHERE ((?1) - t.reviewed_at) / 86400 >= t.interval_days
             ORDER BY t.reviewed_at ASC
@@ -78,7 +85,7 @@ impl TopicStorage for SqliteTopicStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at
+            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at, t.categories
             FROM topics t
             ",
         )?;
@@ -94,7 +101,7 @@ impl TopicStorage for SqliteTopicStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at
+            SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at, t.categories
             FROM topics t
             WHERE t.name = (?1)
             ",
@@ -112,13 +119,14 @@ impl TopicStorage for SqliteTopicStorage {
 
         conn.execute(
             "
-            INSERT INTO topics (name, repetitions, interval_days, ease_factor, reviewed_at)
-            VALUES (?1, ?2, ?3, ?4, ?5)
+            INSERT INTO topics (name, repetitions, interval_days, ease_factor, reviewed_at, categories)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6)
             ON CONFLICT(name) DO UPDATE SET
                 repetitions = excluded.repetitions,
                 interval_days = excluded.interval_days,
                 ease_factor = excluded.ease_factor,
-                reviewed_at = excluded.reviewed_at
+                reviewed_at = excluded.reviewed_at,
+                categories = excluded.categories
             ",
             params![
                 topic.name,
@@ -126,10 +134,38 @@ impl TopicStorage for SqliteTopicStorage {
                 topic.interval,
                 topic.ease_factor,
                 topic.reviewed_at as i64,
+                topic.categories
             ],
         )?;
 
         Ok(())
+    }
+}
+
+impl FromSql for TopicCategories {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        let values = value
+            .as_str()?
+            .split(",")
+            .filter(|v| !v.is_empty())
+            .map(|v| Category {
+                name: v.to_string(),
+            })
+            .collect::<Vec<Category>>();
+
+        Ok(TopicCategories(values))
+    }
+}
+
+impl ToSql for TopicCategories {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        let value = &self
+            .0
+            .iter()
+            .map(|v| v.name.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+        rusqlite::Result::Ok(ToSqlOutput::from(value.clone()))
     }
 }
 

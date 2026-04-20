@@ -21,10 +21,11 @@ Once enabled, mentor mode is **always on** for that session. The agent will neve
 
 ## How it works
 
-A few components wire together when installed: 
-- a **skill** (mentor+) to shapes how the agent teaches
-- an **MCP server** that tracks what you know.
+A few components wire together when installed:
+- a **skill** (mentor+) that shapes how the agent teaches
+- an **MCP server** that tracks what you know
 - a **skill** (mentor+summarise) to summarise your session
+- a **skill** (mentor+categorize) to organise your topics by knowledge domain
 
 ### mentor+
 
@@ -47,6 +48,7 @@ graph LR
     MCP --> T3["topic_depth\nfull · light · skip"]:::tool
     MCP --> T4["review_topic\nrecord outcome · update interval"]:::tool
     MCP --> T5["create_session\ncreate session · return draft path"]:::tool
+    MCP --> T6["update_topic_categories\nassign categories to a topic"]:::tool
 ```
 
 ### mentor+summarise
@@ -58,12 +60,30 @@ graph LR
     classDef file fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
     classDef source fill:#f3f4f6,stroke:#6b7280,color:#374151
 
-    A["🤖 Agent\n(Claude Code / OpenCode)"]:::agent -->|activates| SK(["📋 mentor+-summarise Skill"]):::skill
+    A["🤖 Agent\n(Claude Code / OpenCode)"]:::agent -->|activates| SK(["📋 mentor+summarise Skill"]):::skill
     SK -->|reads| DRAFT[("📝 session draft\n.md file")]:::file
     SK -->|enriches from| CH["conversation history"]:::source
     SK -->|enriches from| GIT["git log"]:::source
     SK -->|enriches from| CODE["referenced files"]:::source
     SK -->|prepends summary to| DRAFT
+```
+
+### mentor+categorize
+
+```mermaid
+graph LR
+    classDef agent fill:#dbeafe,stroke:#3b82f6,color:#1e40af
+    classDef skill fill:#fef3c7,stroke:#f59e0b,color:#92400e
+    classDef mcp fill:#d1fae5,stroke:#10b981,color:#065f46
+    classDef db fill:#f3f4f6,stroke:#6b7280,color:#374151
+    classDef tool fill:#fce7f3,stroke:#ec4899,color:#831843
+
+    A["🤖 Agent\n(Claude Code / OpenCode)"]:::agent -->|activates| SK(["🗂️ mentor+categorize Skill\nbulk categorisation"]):::skill
+    SK -->|MCP calls| MCP["⚙️ MCP Server\nRust · SM-2"]:::mcp
+    MCP --- DB[("🗄️ knowledge.db")]:::db
+
+    MCP --> T1["get_all_topics\nlist all topics with categories"]:::tool
+    MCP --> T2["update_topic_categories\nassign categories to a topic"]:::tool
 ```
 
 ---
@@ -92,6 +112,20 @@ Both macOS and Linux are supported.
 
 #### OpenCode
 Run `/skills` and select `mentor+`.
+
+---
+
+### Categorising topics
+
+Run this on demand to assign knowledge domain categories to all your topics. The skill proposes a categorisation, asks for confirmation, then saves.
+
+#### Claude Code
+```
+/mentor+categorize
+```
+
+#### OpenCode
+Run `/skills` and select `mentor+categorize`.
 
 ---
 

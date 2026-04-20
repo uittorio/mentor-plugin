@@ -8,11 +8,13 @@ use rmcp::serve_server;
 use crate::tool_service::ToolService;
 mod create_session;
 mod deserialisers;
+mod get_all_topics;
 mod get_topics;
 mod review_topic;
 mod tool_service;
 mod topic_candidates;
 mod topic_depth;
+mod update_topic_categories;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

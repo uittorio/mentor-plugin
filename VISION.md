@@ -25,6 +25,7 @@ The MCP server currently stores per-topic SM-2 scheduling state:
 | `interval_days` | Days until next review |
 | `ease_factor` | Mastery level (increases with quality) |
 | `reviewed_at` | Unix timestamp of last review |
+| `categories` | Comma-separated knowledge domain labels |
 
 This tells you *when* to review and *how well* you know something. It does not capture *what happened* during the learning exchange.
 
@@ -111,17 +112,18 @@ Emergent topics are presented as additional curriculum items after the planned t
 
 ---
 
-## Dashboard (Immediate Goal)
+## Dashboard
 
-A simple read-only view of the existing topic database:
+An interactive TUI dashboard for visualising learning progress across topics and sessions.
 
-- Table with all topics
-- Columns: name, ease factor, interval (next review in N days), repetitions, last reviewed
-- Search by topic name
-- Sortable by any column
-- Highlight overdue topics (interval elapsed)
+### Topics view
+- Stats bar showing overdue, due this week, mastered, and struggling counts — filterable
+- Categories chart with per-category bar graphs showing mastered/learning/struggling breakdown
+- Filtered topics list — filters combine across stat and category dimensions
+- Colour coding: red for overdue, green for mastered, yellow for learning
 
-No sessions data yet — that requires schema extension.
+### Sessions view
+- List of past sessions with a markdown preview pane
 
 ---
 
@@ -130,7 +132,6 @@ No sessions data yet — that requires schema extension.
 - Public session search — find sessions by topic, difficulty, date
 - Replay a published session — go through someone else's learning journey
 - Sessions as "production war stories" — real-world context abstracted and shared
-- Skill categorisation — group topics under existing plugin skills
 
 ---
 
