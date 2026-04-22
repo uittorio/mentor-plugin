@@ -16,7 +16,6 @@ struct TopicDepthResult {
 
 #[derive(Deserialize)]
 struct CreateSessionResult {
-    session_id: String,
     session_file_path: String,
 }
 

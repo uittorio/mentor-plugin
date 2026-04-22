@@ -171,8 +171,6 @@ impl ToSql for TopicCategories {
 
 #[cfg(test)]
 mod tests {
-    use std::time::{SystemTime, UNIX_EPOCH};
-
     use super::*;
 
     #[test]
@@ -229,9 +227,12 @@ mod tests {
     #[test]
     fn get_overdue() {
         let storage = SqliteTopicStorage::init_inmemory().unwrap();
-        let today = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let today_seconds = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|t| t.as_secs())
+            .unwrap();
 
-        let two_days_ago = today.as_secs() - (2 * 86400);
+        let two_days_ago = today_seconds - (2 * 86400);
 
         let mut overdue_topic = Topic::new("test 1", two_days_ago);
         overdue_topic = overdue_topic.update_quality(2, two_days_ago);
@@ -241,7 +242,7 @@ mod tests {
         not_overdue_topic = not_overdue_topic.update_quality(5, two_days_ago);
         storage.upsert(&not_overdue_topic).unwrap();
 
-        let topics = storage.get_overdue(today.as_secs()).unwrap();
+        let topics = storage.get_overdue(today_seconds).unwrap();
         assert_eq!(topics.len(), 1);
         assert_eq!(topics.first().unwrap().name, "test 1");
     }

@@ -16,6 +16,8 @@ pub struct Topic {
 
     // it increases with higher quality
     pub ease_factor: f32,
+
+    // time expressed in seconds since epoc
     pub reviewed_at: u64,
 
     pub categories: TopicCategories,
@@ -64,7 +66,8 @@ impl Topic {
     }
 
     pub fn interval_in_seconds(&self) -> u32 {
-        self.interval * 60 * 60 * 24
+        let seconds_in_a_day = 86400;
+        self.interval * seconds_in_a_day
     }
 
     pub fn is_between(&self, start: u64, end: u64) -> bool {
@@ -73,6 +76,11 @@ impl Topic {
 
     pub fn has_category(&self, category: &Category) -> bool {
         self.categories.0.iter().any(|t| t.name == category.name)
+    }
+
+    pub fn days_since_last_review(&self, now: u64) -> u64 {
+        let seconds_in_a_day = 86400;
+        (now - self.reviewed_at) / seconds_in_a_day
     }
 
     pub fn update_quality(&self, quality: u32, review_date: u64) -> Topic {

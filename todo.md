@@ -4,7 +4,7 @@
 ## Reflections on development
 - migration project is not automated. a lot of manual steps.
 - release process/push creates too many actions. I usually push to main then create a release. A release trigger twice
-- 86400 value hardcoded, difficult to remember
+- dates are weird.. described all in seconds since epoc but difficult to remember.
 
 ## Future
 - Copy and paste sync

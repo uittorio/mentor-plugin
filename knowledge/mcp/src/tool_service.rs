@@ -176,7 +176,7 @@ impl ToolService {
             .take(params.0.limit)
             .map(|t| TopicCandidate {
                 name: t.name.clone(),
-                days_since_last_review: (epoch_now - t.reviewed_at) / 86400,
+                days_since_last_review: t.days_since_last_review(epoch_now),
             })
             .collect::<Vec<TopicCandidate>>();
 
