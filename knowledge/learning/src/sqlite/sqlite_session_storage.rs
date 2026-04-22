@@ -38,7 +38,8 @@ impl SqliteSessionStorage {
               name TEXT NOT NULL UNIQUE COLLATE NOCASE,
               created_at INTEGER NOT NULL DEFAULT (unixepoch()),
               modified_at INTEGER NOT NULL DEFAULT (unixepoch()),
-              file_name TEXT NOT NULL
+              file_name TEXT NOT NULL,
+              content TEXT NULL
             );
             COMMIT;
             ",
@@ -52,6 +53,7 @@ impl SqliteSessionStorage {
             created_at: row.get::<_, i64>(2)? as u64,
             modified_at: row.get::<_, i64>(3)? as u64,
             file_name: row.get(4)?,
+            content: row.get(5)?,
         })
     }
 }
@@ -86,8 +88,8 @@ impl SessionStorage for SqliteSessionStorage {
 
         conn.execute(
             "
-            INSERT INTO sessions (id, name, created_at, modified_at, file_name)
-            VALUES (?1, ?2, ?3, ?4, ?5)
+            INSERT INTO sessions (id, name, created_at, modified_at, file_name, content)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6)
             ",
             params![
                 session.id,
@@ -95,7 +97,23 @@ impl SessionStorage for SqliteSessionStorage {
                 session.created_at as i64,
                 session.modified_at as i64,
                 session.file_name,
+                session.content
             ],
+        )?;
+
+        Ok(())
+    }
+
+    fn update(&self, session: &Session) -> Result<(), StorageError> {
+        let conn = self.0.lock().unwrap();
+
+        conn.execute(
+            "
+            UPDATE sessions
+            SET modified_at = ?1, content = ?2
+            WHERE id = ?3
+            ",
+            params![session.modified_at as i64, session.content, session.id],
         )?;
 
         Ok(())
@@ -105,7 +123,7 @@ impl SessionStorage for SqliteSessionStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name
+            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name, s.content
             FROM sessions s
             WHERE s.id = (?1)
             ",
@@ -122,7 +140,7 @@ impl SessionStorage for SqliteSessionStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name
+            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name, s.content
             FROM sessions s
             ORDER by s.modified_at DESC
             ",
@@ -154,6 +172,7 @@ mod tests {
                 created_at: 1775764375,
                 modified_at: 1775764371,
                 file_name: Some("path.md".to_string()),
+                content: Some("content".to_string()),
             })
             .unwrap();
 
@@ -162,6 +181,33 @@ mod tests {
         assert_eq!(inserted.name, "session name");
         assert_eq!(inserted.created_at, 1775764375);
         assert_eq!(inserted.modified_at, 1775764371);
+    }
+
+    #[test]
+    fn update() {
+        let storage = SqliteSessionStorage::init_inmemory().unwrap();
+
+        let session_id = SessionId::new();
+
+        let session = Session {
+            id: session_id.clone(),
+            name: "session name".to_string(),
+            created_at: 1775764375,
+            modified_at: 1775764371,
+            file_name: Some("path.md".to_string()),
+            content: Some("content".to_string()),
+        };
+
+        storage.create(&session).unwrap();
+
+        let update = session.update_content(&"new content".to_string(), 1775764999);
+
+        storage.update(&update).unwrap();
+
+        let inserted = storage.get(&session_id).unwrap().unwrap();
+
+        assert_eq!(inserted.content, Some("new content".to_string()));
+        assert_eq!(inserted.modified_at, 1775764999);
     }
 
     #[test]
@@ -175,6 +221,7 @@ mod tests {
                 created_at: 1775764375,
                 modified_at: 1775764371,
                 file_name: Some("path1.md".to_string()),
+                content: Some("content".to_string()),
             })
             .unwrap();
 
@@ -185,6 +232,7 @@ mod tests {
                 created_at: 1775764375,
                 modified_at: 1775764371,
                 file_name: Some("path2.md".to_string()),
+                content: Some("content".to_string()),
             })
             .unwrap();
 

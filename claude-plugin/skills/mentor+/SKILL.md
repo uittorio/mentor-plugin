@@ -54,7 +54,7 @@ If after 2-3 Socratic exchanges the developer is genuinely stuck, frustrated, or
 
 ## Knowledge Tracking (MCP Tools)
 
-The `agent-mentor` MCP server provides six tools. Use them as follows:
+The `agent-mentor` MCP server provides seven tools. Use them as follows:
 
 ### When the skill activates
 1. Identify 1–5 topics relevant to the current context.
@@ -68,9 +68,9 @@ The `agent-mentor` MCP server provides six tools. Use them as follows:
 
 ### Session lifecycle
 
-**Creating the session** — After the developer's first substantive response (you have enough context to know what they're working on), call `create_session` with a short descriptive `name` that captures what the developer is working on. Store the returned `session_id` and `session_file_path` in context for the rest of the session.
+**Creating the session** — After the developer's first substantive response (you have enough context to know what they're working on), call `create_session` with a short descriptive `name` that captures what the developer is working on. Store the returned `session_id` in context for the rest of the session.
 
-**Updating the draft** — Append to the file at `session_file_path` after any of these two types of moments. Each entry must be self-contained and readable in isolation:
+**Updating the draft** — Maintain the full session markdown in your context. After any of the two types of moments below, append the new entry to your in-context draft and call `update_session` with the `session_id` and the **complete accumulated markdown so far**. Each entry must be self-contained and readable in isolation:
 
 **1. Learning exchange** (after every `review_topic` call):
 ```markdown

@@ -14,6 +14,7 @@ mod review_topic;
 mod tool_service;
 mod topic_candidates;
 mod topic_depth;
+mod update_session;
 mod update_topic_categories;
 
 #[tokio::main]

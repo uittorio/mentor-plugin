@@ -1,5 +1,5 @@
 use learning::file_storage::session_file_name;
-use learning::session::Session;
+use learning::session::{Session, SessionId};
 use learning::session_storage::SessionStorage;
 use learning::topic::{QuestionDepth, Topic};
 use learning::topic_storage::TopicStorage;
@@ -10,10 +10,13 @@ use rmcp::{
     serde_json::{self},
     tool, tool_handler, tool_router,
 };
+use std::str::FromStr;
 use std::time::SystemTimeError;
+use uuid::Uuid;
 
 use crate::create_session::{CreateSessionParams, CreateSessionResult};
 use crate::get_all_topics::TopicResult;
+use crate::update_session::{UpdateSessionParams, UpdateSessionResult};
 use crate::update_topic_categories::{UpdateTopicCategoriesParams, UpdateTopicCategoriesResult};
 use crate::{
     get_topics::GetTopicsParams,
@@ -200,12 +203,37 @@ impl ToolService {
             .create(&session)
             .map_err(|e| e.to_string())?;
 
-        let session_file_path = session
-            .file_path()
-            .expect("path should be present as it was created now");
         let result = CreateSessionResult {
             session_id: session.id.0.to_string(),
-            session_file_path,
+            session_name: session.name,
+        };
+
+        serde_json::to_string(&result).map_err(|e| e.to_string())
+    }
+
+    #[tool(description = "Update a session content")]
+    async fn update_session(
+        &self,
+        params: Parameters<UpdateSessionParams>,
+    ) -> Result<String, String> {
+        let uuid = Uuid::from_str(params.0.session_id.as_str()).map_err(|e| e.to_string())?;
+        let session_id = SessionId(uuid);
+
+        let session = self
+            .session_storage
+            .get(&session_id)
+            .map_err(|e| e.to_string())?
+            .ok_or("Topic not found")?;
+
+        let epoch_now = self.now_epoch().map_err(|e| e.to_string())?;
+        let session = session.update_content(&params.0.content, epoch_now);
+
+        self.session_storage
+            .update(&session)
+            .map_err(|e| e.to_string())?;
+
+        let result = UpdateSessionResult {
+            session_name: session.name,
         };
 
         serde_json::to_string(&result).map_err(|e| e.to_string())

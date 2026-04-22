@@ -16,7 +16,13 @@ struct TopicDepthResult {
 
 #[derive(Deserialize)]
 struct CreateSessionResult {
-    session_file_path: String,
+    session_name: String,
+    session_id: String,
+}
+
+#[derive(Deserialize)]
+struct UpdateSessionResult {
+    session_name: String,
 }
 
 #[derive(Deserialize)]
@@ -87,6 +93,7 @@ async fn list_tools() {
         "update_topic_categories",
         "get_topic_candidates",
         "create_session",
+        "update_session",
     ];
     expected.sort();
 
@@ -237,10 +244,30 @@ async fn create_session() {
 
     let session_result = result.into_typed::<CreateSessionResult>().unwrap();
 
-    assert_eq!(
-        session_result
-            .session_file_path
-            .ends_with("session_name.md"),
-        true
-    );
+    assert_eq!(session_result.session_name.ends_with("session name"), true);
+}
+
+#[tokio::test]
+async fn update_session() {
+    let client = create_client().await;
+
+    let session_create = json!({
+        "name": "session name"
+    });
+
+    let result = call_tool(&client, "create_session".to_string(), &session_create).await;
+
+    let session_result = result.into_typed::<CreateSessionResult>().unwrap();
+
+    let id = session_result.session_id;
+    let session_update = json!({
+        "session_id": id,
+        "content": "Some content"
+    });
+
+    let result = call_tool(&client, "update_session".to_string(), &session_update).await;
+
+    let session_result = result.into_typed::<UpdateSessionResult>().unwrap();
+
+    assert_eq!(session_result.session_name.ends_with("session name"), true);
 }

@@ -1,12 +1,13 @@
-use std::path::Path;
+use std::{fs, path::Path};
 
-use learning::sqlite::sqlite_storage::db_path;
+use learning::{file_storage::file_storage_folder, sqlite::sqlite_storage::db_path};
 use rusqlite::{Connection, params};
 
 fn main() {
     session_file_path_to_file_name();
     make_file_name_required();
     add_categories_to_topics();
+    add_content_to_sessions();
 }
 
 // 0.0.29 onwards
@@ -112,6 +113,60 @@ fn add_categories_to_topics() {
         .unwrap();
 }
 
+// 0.0.34 onwards
+fn add_content_to_sessions() {
+    let path = db_path().unwrap();
+    let connection = Connection::open(path).unwrap();
+
+    connection
+        .execute(
+            "
+        ALTER TABLE sessions ADD COLUMN content TEXT NULL;
+        ",
+            [],
+        )
+        .unwrap();
+
+    let mut statement = connection
+        .prepare(
+            "
+        SELECT id, name, created_at, modified_at, file_name, content from sessions
+        WHERE content is NULL
+        ",
+        )
+        .unwrap();
+
+    let sessions = statement
+        .query_map([], map_sessions)
+        .unwrap()
+        .collect::<Result<Vec<SessionWithAllHistoricalFields>, rusqlite::Error>>()
+        .unwrap();
+
+    for ele in sessions.iter() {
+        let folder = file_storage_folder();
+
+        let file_name = ele.name.replace(" ", "_") + ".md";
+
+        let path = Path::new(&folder)
+            .join(file_name)
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let content = match fs::read_to_string(path) {
+            Ok(c) => c,
+            Err(e) => format!("No content found e: {}", e),
+        };
+
+        connection
+            .execute(
+                "UPDATE sessions SET content = ?1 WHERE id = ?2",
+                params![content, ele.id],
+            )
+            .unwrap();
+    }
+}
+
 fn map_sessions(row: &rusqlite::Row<'_>) -> rusqlite::Result<SessionWithAllHistoricalFields> {
     Ok(SessionWithAllHistoricalFields {
         id: row.get(0)?,
@@ -119,7 +174,8 @@ fn map_sessions(row: &rusqlite::Row<'_>) -> rusqlite::Result<SessionWithAllHisto
         created_at: row.get::<_, i64>(2)? as u64,
         modified_at: row.get::<_, i64>(3)? as u64,
         file_name: row.get(4)?,
-        file_path: row.get(5)?,
+        file_path: None,
+        content: row.get(5)?,
     })
 }
 
@@ -130,4 +186,5 @@ pub struct SessionWithAllHistoricalFields {
     pub file_name: Option<String>,
     pub file_path: Option<String>,
     pub modified_at: u64,
+    pub content: Option<String>,
 }

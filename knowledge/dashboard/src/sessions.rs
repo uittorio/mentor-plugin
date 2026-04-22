@@ -1,5 +1,3 @@
-use std::fs;
-
 use chrono::DateTime;
 use ratatui::{
     Frame,
@@ -65,23 +63,15 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
 
             frame.render_widget(block, right);
 
-            match &model.sessions[s]
-                .file_path()
-                .and_then(|f| fs::read_to_string(f))
-            {
-                Ok(file_content) => {
-                    frame.render_widget(
-                        Paragraph::new(file_content.as_str())
-                            .scroll((model.session_md_scroll, 0))
-                            .wrap(Wrap { trim: false }),
-                        inner,
-                    );
-                }
-                Err(e) => {
-                    frame.render_widget(
-                        Paragraph::new(e.to_string()).wrap(Wrap { trim: false }),
-                        inner,
-                    );
+            match &model.sessions[s].content {
+                Some(file_content) => frame.render_widget(
+                    Paragraph::new(file_content.as_str())
+                        .scroll((model.session_md_scroll, 0))
+                        .wrap(Wrap { trim: false }),
+                    inner,
+                ),
+                None => {
+                    frame.render_widget(Paragraph::new("No content available"), inner);
                 }
             }
         }

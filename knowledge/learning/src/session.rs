@@ -15,6 +15,7 @@ pub struct Session {
     pub created_at: u64,
     pub file_name: Option<String>,
     pub modified_at: u64,
+    pub content: Option<String>,
 }
 
 impl Session {
@@ -25,6 +26,18 @@ impl Session {
             file_name: Some(file_name.to_string()),
             created_at,
             modified_at: created_at,
+            content: None,
+        }
+    }
+
+    pub fn update_content(&self, content: &String, now: u64) -> Session {
+        Session {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            created_at: self.created_at,
+            file_name: self.file_name.clone(),
+            modified_at: now,
+            content: Some(content.to_string()),
         }
     }
 }

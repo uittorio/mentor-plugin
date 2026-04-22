@@ -1,12 +1,12 @@
 use rmcp::schemars;
 
 #[derive(serde::Serialize)]
-pub struct CreateSessionResult {
-    pub session_id: String,
+pub struct UpdateSessionResult {
     pub session_name: String,
 }
 
 #[derive(serde::Deserialize, schemars::JsonSchema)]
-pub struct CreateSessionParams {
-    pub name: String,
+pub struct UpdateSessionParams {
+    pub session_id: String,
+    pub content: String,
 }
