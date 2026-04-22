@@ -124,3 +124,7 @@ Remove the mentor dashboard binary:
 ```bash
 rm -f ~/.local/bin/mentor-dashboard
 ```
+
+# Sync
+This plugin saves a database and session files in your local computer at this path ~/.local/share/agent-mentor. 
+If you want to re use it across different machines you can can copy and paste the entire content at that folder.

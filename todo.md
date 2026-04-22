@@ -4,7 +4,6 @@
 - dates are weird.. described all in seconds since epoc but difficult to remember.
 
 ## Future
-- Copy and paste sync
 - Use optional spacetime db database (to help with sync)
 - keep going with VISION
 - make the skill less developer focused, this could be used for anything
