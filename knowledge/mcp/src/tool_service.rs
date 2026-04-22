@@ -1,4 +1,3 @@
-use learning::file_storage::session_file_name;
 use learning::session::{Session, SessionId};
 use learning::session_storage::SessionStorage;
 use learning::topic::{QuestionDepth, Topic};
@@ -197,7 +196,7 @@ impl ToolService {
 
         let name = &params.0.name;
 
-        let session = Session::new(&name, &session_file_name(name), epoch_now);
+        let session = Session::new(&name, epoch_now);
 
         self.session_storage
             .create(&session)

@@ -52,8 +52,7 @@ impl SqliteSessionStorage {
             name: row.get(1)?,
             created_at: row.get::<_, i64>(2)? as u64,
             modified_at: row.get::<_, i64>(3)? as u64,
-            file_name: row.get(4)?,
-            content: row.get(5)?,
+            content: row.get(4)?,
         })
     }
 }
@@ -88,7 +87,7 @@ impl SessionStorage for SqliteSessionStorage {
 
         conn.execute(
             "
-            INSERT INTO sessions (id, name, created_at, modified_at, file_name, content)
+            INSERT INTO sessions (id, name, created_at, modified_at, content)
             VALUES (?1, ?2, ?3, ?4, ?5, ?6)
             ",
             params![
@@ -96,7 +95,6 @@ impl SessionStorage for SqliteSessionStorage {
                 session.name,
                 session.created_at as i64,
                 session.modified_at as i64,
-                session.file_name,
                 session.content
             ],
         )?;
@@ -123,7 +121,7 @@ impl SessionStorage for SqliteSessionStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name, s.content
+            SELECT s.id, s.name, s.created_at, s.modified_at, s.content
             FROM sessions s
             WHERE s.id = (?1)
             ",
@@ -140,7 +138,7 @@ impl SessionStorage for SqliteSessionStorage {
         let conn = self.0.lock().unwrap();
         let mut statement = conn.prepare(
             "
-            SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name, s.content
+            SELECT s.id, s.name, s.created_at, s.modified_at, s.content
             FROM sessions s
             ORDER by s.modified_at DESC
             ",
@@ -171,7 +169,6 @@ mod tests {
                 name: "session name".to_string(),
                 created_at: 1775764375,
                 modified_at: 1775764371,
-                file_name: Some("path.md".to_string()),
                 content: Some("content".to_string()),
             })
             .unwrap();
@@ -194,7 +191,6 @@ mod tests {
             name: "session name".to_string(),
             created_at: 1775764375,
             modified_at: 1775764371,
-            file_name: Some("path.md".to_string()),
             content: Some("content".to_string()),
         };
 
@@ -220,7 +216,6 @@ mod tests {
                 name: "session name 1".to_string(),
                 created_at: 1775764375,
                 modified_at: 1775764371,
-                file_name: Some("path1.md".to_string()),
                 content: Some("content".to_string()),
             })
             .unwrap();
@@ -231,7 +226,6 @@ mod tests {
                 name: "session name 2".to_string(),
                 created_at: 1775764375,
                 modified_at: 1775764371,
-                file_name: Some("path2.md".to_string()),
                 content: Some("content".to_string()),
             })
             .unwrap();
