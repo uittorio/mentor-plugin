@@ -38,7 +38,6 @@ impl SqliteSessionStorage {
               name TEXT NOT NULL UNIQUE COLLATE NOCASE,
               created_at INTEGER NOT NULL DEFAULT (unixepoch()),
               modified_at INTEGER NOT NULL DEFAULT (unixepoch()),
-              file_name TEXT NOT NULL,
               content TEXT NULL
             );
             COMMIT;
@@ -88,7 +87,7 @@ impl SessionStorage for SqliteSessionStorage {
         conn.execute(
             "
             INSERT INTO sessions (id, name, created_at, modified_at, content)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+            VALUES (?1, ?2, ?3, ?4, ?5)
             ",
             params![
                 session.id,
