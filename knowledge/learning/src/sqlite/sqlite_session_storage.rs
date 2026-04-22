@@ -124,6 +124,7 @@ impl SessionStorage for SqliteSessionStorage {
             "
             SELECT s.id, s.name, s.created_at, s.modified_at, s.file_name
             FROM sessions s
+            ORDER by s.modified_at DESC
             ",
         )?;
 

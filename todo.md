@@ -1,6 +1,3 @@
-## Support
-- WINDOWS support.
-
 ## Reflections on development
 - migration project is not automated. a lot of manual steps.
 - release process/push creates too many actions. I usually push to main then create a release. A release trigger twice
@@ -11,6 +8,7 @@
 - Use optional spacetime db database (to help with sync)
 - keep going with VISION
 - make the skill less developer focused, this could be used for anything
+- WINDOWS support (it just a matter of where copying stuff, binaries for bins and if sh installation works)
 
 ## Bugs
 - if you don't do consolidate manually it will loose the progress, you could close the session and consolidation does not happen

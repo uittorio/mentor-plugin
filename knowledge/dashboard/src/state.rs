@@ -72,6 +72,7 @@ pub enum Message {
     NavigateDown,
     NextSessionPane,
     PrevPane,
+    ResetFilters,
 }
 
 pub fn update_selected_table_up(table_state: &mut TableState) {
@@ -183,5 +184,6 @@ pub fn update(model: &mut Model, msg: Message) -> () {
                 }
             },
         },
+        Message::ResetFilters => model.category_state.select(None),
     }
 }
