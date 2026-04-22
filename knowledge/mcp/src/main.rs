@@ -1,7 +1,8 @@
 use std::{env::Args, error::Error};
 
-use learning::sqlite::{
-    sqlite_session_storage::SqliteSessionStorage, sqlite_topic_storage::SqliteTopicStorage,
+use learning::libsql::{
+    libsql_session_storage::LibsqlSessionStorage, libsql_storage::connection,
+    libsql_topic_storage::LibsqlTopicStorage,
 };
 use rmcp::serve_server;
 
@@ -28,8 +29,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let io = (tokio::io::stdin(), tokio::io::stdout());
 
-    let topic_storage = SqliteTopicStorage::init()?;
-    let session_storage = SqliteSessionStorage::init()?;
+    let conn = connection().await?;
+    let topic_storage = LibsqlTopicStorage::init(conn.clone()).await?;
+    let session_storage = LibsqlSessionStorage::init(conn).await?;
 
     serve_server(
         ToolService::new(Box::new(topic_storage), Box::new(session_storage)),

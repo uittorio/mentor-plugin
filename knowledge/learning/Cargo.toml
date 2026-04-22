@@ -4,6 +4,11 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
-rusqlite = {version = "0.39.0"}
+libsql = {version = "0.9.30"}
+eyre = {version = "0.6.12"}
 serde = {version = "1.0.228", features=["derive"]}
 uuid = {version = "1.23.0", features=["v4"]}
+async-trait = {version = "0.1"}
+
+[dev-dependencies]
+tokio = {version = "1", features = ["full"]}

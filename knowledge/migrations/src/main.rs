@@ -1,84 +1,68 @@
-use std::{fs, path::Path};
+use std::{fs, path::Path, sync::Arc};
 
-use learning::{file_storage::file_storage_folder, sqlite::sqlite_storage::db_path};
-use rusqlite::{Connection, params};
+use learning::file_storage::file_storage_folder;
+use learning::libsql::libsql_storage::connection;
+use libsql::{Connection, params};
 
-fn main() {
-    session_file_path_to_file_name();
-    make_file_name_required();
-    add_categories_to_topics();
-    add_content_to_sessions();
+#[tokio::main]
+async fn main() {
+    let conn = connection().await.unwrap();
+    session_file_path_to_file_name(&conn).await;
+    make_file_name_required(&conn).await;
+    add_categories_to_topics(&conn).await;
+    add_content_to_sessions(&conn).await;
 }
 
 // 0.0.29 onwards
-fn session_file_path_to_file_name() {
-    let path = db_path().unwrap();
-    let connection = Connection::open(path).unwrap();
-
-    connection
-        .execute(
-            "
-        ALTER TABLE sessions ADD COLUMN file_name TEXT;
-
-        ",
-            [],
-        )
+async fn session_file_path_to_file_name(conn: &Arc<Connection>) {
+    conn.execute("ALTER TABLE sessions ADD COLUMN file_name TEXT;", ())
+        .await
         .unwrap();
 
-    let mut statement = connection
+    let statement = conn
         .prepare(
-            "
-        SELECT id, name, created_at, modified_at, file_name, file_path from sessions
-        WHERE file_name is NULL
-        ",
+            "SELECT id, name, created_at, modified_at, file_name, file_path from sessions
+        WHERE file_name is NULL",
         )
+        .await
         .unwrap();
 
-    let sessions = statement
-        .query_map([], map_sessions)
-        .unwrap()
-        .collect::<Result<Vec<SessionWithAllHistoricalFields>, rusqlite::Error>>()
-        .unwrap();
+    let mut rows = statement.query(()).await.unwrap();
+    let mut sessions: Vec<SessionWithAllHistoricalFields> = Vec::new();
+    while let Some(row) = rows.next().await.unwrap() {
+        sessions.push(map_sessions(&row));
+    }
 
     for ele in sessions.iter() {
         let file_name = ele
             .file_path
             .as_ref()
             .map(|f| {
-                return Path::new(f.as_str())
+                Path::new(f.as_str())
                     .file_name()
                     .and_then(|p| p.to_str())
-                    .unwrap();
+                    .unwrap()
+                    .to_string()
             })
             .unwrap();
 
-        connection
-            .execute(
-                "UPDATE sessions SET file_name = ?1 WHERE id = ?2",
-                params![file_name, ele.id],
-            )
-            .unwrap();
+        conn.execute(
+            "UPDATE sessions SET file_name = ?1 WHERE id = ?2",
+            params![file_name, ele.id.clone()],
+        )
+        .await
+        .unwrap();
     }
 
-    connection
-        .execute(
-            "
-        ALTER TABLE sessions DROP COLUMN file_path;
-
-        ",
-            [],
-        )
+    conn.execute("ALTER TABLE sessions DROP COLUMN file_path;", ())
+        .await
         .unwrap();
 }
 
 // 0.0.30 onwards
-fn make_file_name_required() {
-    let path = db_path().unwrap();
-    let connection = Connection::open(path).unwrap();
-
-    connection
-        .execute_batch(
-            "BEGIN;
+async fn make_file_name_required(conn: &Arc<Connection>) {
+    conn.execute_batch(
+        "BEGIN;
         CREATE TABLE IF NOT EXISTS sessions_new (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -94,53 +78,40 @@ fn make_file_name_required() {
         ALTER TABLE sessions_new RENAME TO sessions;
         COMMIT;
         ",
-        )
-        .unwrap();
+    )
+    .await
+    .unwrap();
 }
 
 // 0.0.32 onwards
-fn add_categories_to_topics() {
-    let path = db_path().unwrap();
-    let connection = Connection::open(path).unwrap();
-
-    connection
-        .execute(
-            "
-        ALTER TABLE topics ADD COLUMN categories TEXT NOT NULL DEFAULT '';
-        ",
-            [],
-        )
-        .unwrap();
+async fn add_categories_to_topics(conn: &Arc<Connection>) {
+    conn.execute(
+        "ALTER TABLE topics ADD COLUMN categories TEXT NOT NULL DEFAULT '';",
+        (),
+    )
+    .await
+    .unwrap();
 }
 
 // 0.0.34 onwards
-fn add_content_to_sessions() {
-    let path = db_path().unwrap();
-    let connection = Connection::open(path).unwrap();
-
-    connection
-        .execute(
-            "
-        ALTER TABLE sessions ADD COLUMN content TEXT NULL;
-        ",
-            [],
-        )
+async fn add_content_to_sessions(conn: &Arc<Connection>) {
+    conn.execute("ALTER TABLE sessions ADD COLUMN content TEXT NULL;", ())
+        .await
         .unwrap();
 
-    let mut statement = connection
+    let statement = conn
         .prepare(
-            "
-        SELECT id, name, created_at, modified_at, file_name, content from sessions
-        WHERE content is NULL
-        ",
+            "SELECT id, name, created_at, modified_at, file_name, content from sessions
+        WHERE content is NULL",
         )
+        .await
         .unwrap();
 
-    let sessions = statement
-        .query_map([], map_sessions)
-        .unwrap()
-        .collect::<Result<Vec<SessionWithAllHistoricalFields>, rusqlite::Error>>()
-        .unwrap();
+    let mut rows = statement.query(()).await.unwrap();
+    let mut sessions: Vec<SessionWithAllHistoricalFields> = Vec::new();
+    while let Some(row) = rows.next().await.unwrap() {
+        sessions.push(map_sessions(&row));
+    }
 
     for ele in sessions.iter() {
         let folder = file_storage_folder();
@@ -158,25 +129,25 @@ fn add_content_to_sessions() {
             Err(e) => format!("No content found e: {}", e),
         };
 
-        connection
-            .execute(
-                "UPDATE sessions SET content = ?1 WHERE id = ?2",
-                params![content, ele.id],
-            )
-            .unwrap();
+        conn.execute(
+            "UPDATE sessions SET content = ?1 WHERE id = ?2",
+            params![content, ele.id.clone()],
+        )
+        .await
+        .unwrap();
     }
 }
 
-fn map_sessions(row: &rusqlite::Row<'_>) -> rusqlite::Result<SessionWithAllHistoricalFields> {
-    Ok(SessionWithAllHistoricalFields {
-        id: row.get(0)?,
-        name: row.get(1)?,
-        created_at: row.get::<_, i64>(2)? as u64,
-        modified_at: row.get::<_, i64>(3)? as u64,
-        file_name: row.get(4)?,
+fn map_sessions(row: &libsql::Row) -> SessionWithAllHistoricalFields {
+    SessionWithAllHistoricalFields {
+        id: row.get(0).unwrap(),
+        name: row.get(1).unwrap(),
+        created_at: row.get::<i64>(2).unwrap() as u64,
+        modified_at: row.get::<i64>(3).unwrap() as u64,
+        file_name: row.get(4).unwrap(),
         file_path: None,
-        content: row.get(5)?,
-    })
+        content: row.get(5).unwrap(),
+    }
 }
 
 pub struct SessionWithAllHistoricalFields {

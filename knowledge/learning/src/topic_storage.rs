@@ -1,8 +1,11 @@
-use crate::{storage_error::StorageError, topic::Topic};
+use async_trait::async_trait;
 
+use crate::topic::Topic;
+
+#[async_trait]
 pub trait TopicStorage {
-    fn get_overdue(&self, now: u64) -> Result<Vec<Topic>, StorageError>;
-    fn get_all(&self) -> Result<Vec<Topic>, StorageError>;
-    fn get(&self, topic: &str) -> Result<Option<Topic>, StorageError>;
-    fn upsert(&self, topic: &Topic) -> Result<(), StorageError>;
+    async fn get_overdue(&self, now: u64) -> eyre::Result<Vec<Topic>>;
+    async fn get_all(&self) -> eyre::Result<Vec<Topic>>;
+    async fn get(&self, topic: &str) -> eyre::Result<Option<Topic>>;
+    async fn upsert(&self, topic: &Topic) -> eyre::Result<()>;
 }

@@ -5,9 +5,10 @@ use std::{
 };
 
 use crossterm::event::{Event, KeyCode};
+use learning::libsql::libsql_session_storage::LibsqlSessionStorage;
+use learning::libsql::libsql_storage::connection;
+use learning::libsql::libsql_topic_storage::LibsqlTopicStorage;
 use learning::session_storage::SessionStorage;
-use learning::sqlite::sqlite_session_storage::SqliteSessionStorage;
-use learning::sqlite::sqlite_topic_storage::SqliteTopicStorage;
 use learning::topic_storage::TopicStorage;
 use ratatui::layout::{Layout, Offset, Rect};
 use ratatui::style::{Color, Stylize};
@@ -39,25 +40,33 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<()> {
-    let topic_storage = SqliteTopicStorage::init()?;
-    let session_storage = SqliteSessionStorage::init()?;
+    let rt = tokio::runtime::Runtime::new()?;
+    let conn = rt.block_on(connection())?;
+    let topic_storage = rt.block_on(LibsqlTopicStorage::init(conn.clone()))?;
+    let session_storage = rt.block_on(LibsqlSessionStorage::init(conn))?;
 
     let mut model = Model::new();
 
-    update(&mut model, Message::UpdateTopics(topic_storage.get_all()?));
     update(
         &mut model,
-        Message::UpdateSessions(session_storage.get_all()?),
+        Message::UpdateTopics(rt.block_on(topic_storage.get_all())?),
+    );
+    update(
+        &mut model,
+        Message::UpdateSessions(rt.block_on(session_storage.get_all())?),
     );
 
     let mut current_time = Instant::now();
 
     loop {
         if current_time.elapsed() >= Duration::from_secs(5) {
-            update(&mut model, Message::UpdateTopics(topic_storage.get_all()?));
             update(
                 &mut model,
-                Message::UpdateSessions(session_storage.get_all()?),
+                Message::UpdateTopics(rt.block_on(topic_storage.get_all())?),
+            );
+            update(
+                &mut model,
+                Message::UpdateSessions(rt.block_on(session_storage.get_all())?),
             );
             current_time = Instant::now();
         };

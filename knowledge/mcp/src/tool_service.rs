@@ -57,7 +57,11 @@ impl ToolService {
         description = "Search for existing topic names similar to a search string using trigram similarity. Returns topic names ranked by similarity."
     )]
     async fn get_topics(&self, params: Parameters<GetTopicsParams>) -> Result<String, String> {
-        let topics = self.topic_storage.get_all().map_err(|e| e.to_string())?;
+        let topics = self
+            .topic_storage
+            .get_all()
+            .await
+            .map_err(|e| e.to_string())?;
         let topic_names = topics
             .into_iter()
             .filter(|t| t.is_similar(&params.0.search))
@@ -69,7 +73,11 @@ impl ToolService {
 
     #[tool(description = "Get all topics")]
     async fn get_all_topics(&self) -> Result<String, String> {
-        let topics = self.topic_storage.get_all().map_err(|e| e.to_string())?;
+        let topics = self
+            .topic_storage
+            .get_all()
+            .await
+            .map_err(|e| e.to_string())?;
         let topic_names = topics
             .into_iter()
             .map(|x| TopicResult {
@@ -89,6 +97,7 @@ impl ToolService {
         let topic = self
             .topic_storage
             .get(&topic_name)
+            .await
             .map_err(|e| e.to_string())?;
 
         let topic_depth = match topic {
@@ -114,6 +123,7 @@ impl ToolService {
         let topic = self
             .topic_storage
             .get(&topic_name)
+            .await
             .map_err(|e| e.to_string())?
             .unwrap_or(Topic::new(&topic_name, epoch_now));
 
@@ -121,6 +131,7 @@ impl ToolService {
 
         self.topic_storage
             .upsert(&updated_topic)
+            .await
             .map_err(|e| e.to_string())?;
 
         let result = ReviewTopicResult {
@@ -141,6 +152,7 @@ impl ToolService {
         let topic = self
             .topic_storage
             .get(&topic_name)
+            .await
             .map_err(|e| e.to_string())?
             .ok_or("Topic not found")?;
 
@@ -148,6 +160,7 @@ impl ToolService {
 
         self.topic_storage
             .upsert(&updated_topic)
+            .await
             .map_err(|e| e.to_string())?;
 
         let result = UpdateTopicCategoriesResult {
@@ -173,6 +186,7 @@ impl ToolService {
         let results = self
             .topic_storage
             .get_overdue(epoch_now)
+            .await
             .map_err(|e| e.to_string())?
             .iter()
             .take(params.0.limit)
@@ -200,6 +214,7 @@ impl ToolService {
 
         self.session_storage
             .create(&session)
+            .await
             .map_err(|e| e.to_string())?;
 
         let result = CreateSessionResult {
@@ -221,6 +236,7 @@ impl ToolService {
         let session = self
             .session_storage
             .get(&session_id)
+            .await
             .map_err(|e| e.to_string())?
             .ok_or("Topic not found")?;
 
@@ -229,6 +245,7 @@ impl ToolService {
 
         self.session_storage
             .update(&session)
+            .await
             .map_err(|e| e.to_string())?;
 
         let result = UpdateSessionResult {
