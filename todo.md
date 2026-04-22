@@ -4,7 +4,8 @@
 - dates are weird.. described all in seconds since epoc but difficult to remember.
 
 ## Future
-- Use optional spacetime db database (to help with sync)
+- Use optional turso sync (to help with sync)
+- format md content in ratatui
 - keep going with VISION
 - make the skill less developer focused, this could be used for anything
 - WINDOWS support (it just a matter of where copying stuff, binaries for bins and if sh installation works)
