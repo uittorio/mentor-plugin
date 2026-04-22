@@ -25,14 +25,8 @@ pub struct Topic {
 pub struct TopicCategories(pub Vec<Category>);
 
 impl TopicCategories {
-    pub fn add(&self, categories: Vec<String>) -> TopicCategories {
-        let merged: HashSet<String> = self
-            .0
-            .iter()
-            .map(|c| c.name.clone())
-            .chain(categories.into_iter())
-            .map(|c| c.to_lowercase())
-            .collect();
+    pub fn set(&self, categories: Vec<String>) -> TopicCategories {
+        let merged: HashSet<String> = categories.iter().map(|c| c.to_lowercase()).collect();
 
         TopicCategories(merged.into_iter().map(|name| Category { name }).collect())
     }
@@ -85,14 +79,14 @@ impl Topic {
         sm2(&self, quality, review_date)
     }
 
-    pub fn add_categories(&self, categories: Vec<String>) -> Topic {
+    pub fn update_categories(&self, categories: Vec<String>) -> Topic {
         Topic {
             name: self.name.clone(),
             repetitions: self.repetitions,
             interval: self.interval,
             ease_factor: self.ease_factor,
             reviewed_at: self.reviewed_at,
-            categories: self.categories.add(categories),
+            categories: self.categories.set(categories),
         }
     }
 
@@ -127,7 +121,11 @@ mod tests {
             ..mocked_topic()
         };
 
-        let new_topic = topic.add_categories(vec!["One".to_string(), "Two".to_string()]);
+        let new_topic = topic.update_categories(vec![
+            "One".to_string(),
+            "Two".to_string(),
+            "two".to_string(),
+        ]);
 
         let mut names = new_topic
             .categories
@@ -141,19 +139,6 @@ mod tests {
         expected.sort();
 
         assert_eq!(names, expected);
-
-        let without_duplicates = new_topic.add_categories(vec!["oNE".to_string()]);
-
-        let mut without_duplicates_names = without_duplicates
-            .categories
-            .0
-            .iter()
-            .map(|c| &c.name)
-            .collect::<Vec<_>>();
-
-        without_duplicates_names.sort();
-
-        assert_eq!(without_duplicates_names, expected);
     }
 }
 

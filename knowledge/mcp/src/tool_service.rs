@@ -142,7 +142,7 @@ impl ToolService {
             .map_err(|e| e.to_string())?
             .ok_or("Topic not found")?;
 
-        let updated_topic = topic.add_categories(params.0.categories);
+        let updated_topic = topic.update_categories(params.0.categories);
 
         self.topic_storage
             .upsert(&updated_topic)
