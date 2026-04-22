@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Block, Cell, Padding, Paragraph, Row, Table, Wrap},
 };
 
-use crate::state::{Model, Pane};
+use crate::state::{Model, SessionsPane};
 
 pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
     let rows = model.sessions.iter().map(|s| {
@@ -39,9 +39,9 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
 
     let [left, right] = area.layout(&layout);
 
-    let left_block = match model.focused_pane {
-        Pane::Sessions => Block::bordered().border_style(Style::new().fg(Color::Blue)),
-        Pane::SessionMd => Block::bordered().border_style(Style::new().fg(Color::Reset)),
+    let left_block = match model.selected_session_pane {
+        SessionsPane::List => Block::bordered().border_style(Style::new().fg(Color::Blue)),
+        SessionsPane::SessionMd => Block::bordered().border_style(Style::new().fg(Color::Reset)),
     };
 
     let left_inner = left_block.inner(left);
@@ -52,11 +52,11 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
 
     match model.session_state.selected() {
         Some(s) => {
-            let block = match model.focused_pane {
-                Pane::Sessions => Block::bordered()
+            let block = match model.selected_session_pane {
+                SessionsPane::List => Block::bordered()
                     .border_style(Style::new().fg(Color::Reset))
                     .padding(Padding::uniform(2)),
-                Pane::SessionMd => Block::bordered()
+                SessionsPane::SessionMd => Block::bordered()
                     .padding(Padding::uniform(2))
                     .border_style(Style::new().fg(Color::Blue)),
             };

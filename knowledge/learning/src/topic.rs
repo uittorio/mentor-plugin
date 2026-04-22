@@ -48,8 +48,37 @@ impl Topic {
         }
     }
 
+    pub fn mastered(&self) -> bool {
+        self.question_depth() == QuestionDepth::Skip
+    }
+
+    pub fn struggled(&self) -> bool {
+        self.question_depth() == QuestionDepth::Full && self.ease_factor < 2.0
+    }
+
+    pub fn learning(&self) -> bool {
+        !self.mastered() && !self.struggled()
+    }
+
     pub fn is_similar(&self, value: &str) -> bool {
         trigram_similarity(value, &self.name) >= 0.2
+    }
+
+    pub fn is_overdue(&self, now: u64) -> bool {
+        let seconds_in_a_day = 86400;
+        (now - &self.reviewed_at) / seconds_in_a_day >= self.interval as u64
+    }
+
+    pub fn interval_in_seconds(&self) -> u32 {
+        self.interval * 60 * 60 * 24
+    }
+
+    pub fn is_between(&self, start: u64, end: u64) -> bool {
+        self.reviewed_at >= start && self.reviewed_at <= end
+    }
+
+    pub fn has_category(&self, category: &Category) -> bool {
+        self.categories.0.iter().any(|t| t.name == category.name)
     }
 
     pub fn update_quality(&self, quality: u32, review_date: u64) -> Topic {
@@ -79,7 +108,7 @@ impl Topic {
     }
 }
 
-#[derive(Serialize)]
+#[derive(PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum QuestionDepth {
     Full,

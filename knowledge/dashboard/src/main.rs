@@ -74,7 +74,7 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
                     KeyCode::Char('j') => update(&mut model, Message::NavigateDown),
                     KeyCode::Char('k') => update(&mut model, Message::NavigateUp),
                     KeyCode::Char('h') => update(&mut model, Message::PrevPane),
-                    KeyCode::Char('l') => update(&mut model, Message::NextPane),
+                    KeyCode::Char('l') => update(&mut model, Message::NextSessionPane),
                     _ => {}
                 },
                 _ => {}
@@ -93,7 +93,7 @@ fn render(frame: &mut Frame, model: &mut Model) {
     let title = Line::from_iter([
         Span::from("Mentor dashboard").bold(),
         Span::from(
-            "((q) to quit, (s) sessions, (t) topics, (j,k) navigate up and down, (h,l) focus pane)",
+            "((q) to quit, (s) sessions, (t) topics, (j,k) navigate up and down, (h,l) rotate pane)",
         ),
     ]);
 
