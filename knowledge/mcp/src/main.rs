@@ -1,7 +1,7 @@
 use std::{env::Args, error::Error};
 
 use learning::libsql::{
-    libsql_session_storage::LibsqlSessionStorage, libsql_storage::connection,
+    libsql_session_storage::LibsqlSessionStorage, libsql_storage::libsql_connection,
     libsql_topic_storage::LibsqlTopicStorage,
 };
 use rmcp::serve_server;
@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let io = (tokio::io::stdin(), tokio::io::stdout());
 
-    let conn = connection().await?;
+    let conn = libsql_connection().await?;
     let topic_storage = LibsqlTopicStorage::init(conn.clone()).await?;
     let session_storage = LibsqlSessionStorage::init(conn).await?;
 

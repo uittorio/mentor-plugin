@@ -1,16 +1,16 @@
 use std::{fs, path::Path, sync::Arc};
 
 use learning::file_storage::file_storage_folder;
-use learning::libsql::libsql_storage::connection;
+use learning::libsql::libsql_storage::libsql_connection;
 use libsql::{Connection, params};
 
 #[tokio::main]
 async fn main() {
-    let conn = connection().await.unwrap();
-    session_file_path_to_file_name(&conn).await;
-    make_file_name_required(&conn).await;
-    add_categories_to_topics(&conn).await;
-    add_content_to_sessions(&conn).await;
+    let conn = libsql_connection().await.unwrap();
+    session_file_path_to_file_name(&conn.connection).await;
+    make_file_name_required(&conn.connection).await;
+    add_categories_to_topics(&conn.connection).await;
+    add_content_to_sessions(&conn.connection).await;
 }
 
 // 0.0.29 onwards

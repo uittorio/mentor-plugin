@@ -1,9 +1,14 @@
 use std::{fs, path::Path, sync::Arc};
 
-use libsql::{Builder, Connection};
+use libsql::{Builder, Connection, Database};
 use serde::Deserialize;
 
 use crate::file_storage::file_storage_folder;
+
+pub struct LibsqlConnection {
+    pub database: Arc<Database>,
+    pub connection: Arc<Connection>,
+}
 
 pub fn db_path() -> eyre::Result<String> {
     let folder = file_storage_folder();
@@ -47,26 +52,33 @@ pub fn config() -> eyre::Result<Option<SyncConfig>> {
     return Ok(sync);
 }
 
-pub async fn connection() -> eyre::Result<Arc<Connection>> {
+pub async fn libsql_connection() -> eyre::Result<Arc<LibsqlConnection>> {
     let config = config()?;
     let local_path = db_path()?;
 
     match config {
         Some(config) => {
-            let database =
+            let database = Arc::new(
                 Builder::new_remote_replica(local_path, config.turso.url, config.turso.token)
                     .build()
-                    .await?;
+                    .await?,
+            );
 
-            let connection = database.connect()?;
+            let connection = Arc::new(database.connect()?);
             database.sync().await?;
 
-            return Ok(Arc::new(connection));
+            Ok(Arc::new(LibsqlConnection {
+                database,
+                connection,
+            }))
         }
         None => {
-            let database = Builder::new_local(local_path).build().await?;
-            let connection = database.connect()?;
-            return Ok(Arc::new(connection));
+            let database = Arc::new(Builder::new_local(local_path).build().await?);
+            let connection = Arc::new(database.connect()?);
+            Ok(Arc::new(LibsqlConnection {
+                database,
+                connection,
+            }))
         }
     }
 }

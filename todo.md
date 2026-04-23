@@ -5,6 +5,8 @@
 
 ## Future
 - Use optional turso sync (to help with sync)
+  - test removing config
+  - test removing properties
 - keep going with VISION
 - make the skill less developer focused, this could be used for anything
 - WINDOWS support (it just a matter of where copying stuff, binaries for bins and if sh installation works)

@@ -6,7 +6,7 @@ use std::{
 
 use crossterm::event::{Event, KeyCode};
 use learning::libsql::libsql_session_storage::LibsqlSessionStorage;
-use learning::libsql::libsql_storage::connection;
+use learning::libsql::libsql_storage::libsql_connection;
 use learning::libsql::libsql_topic_storage::LibsqlTopicStorage;
 use learning::session_storage::SessionStorage;
 use learning::topic_storage::TopicStorage;
@@ -41,7 +41,7 @@ fn main() -> color_eyre::Result<()> {
 
 fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<()> {
     let rt = tokio::runtime::Runtime::new()?;
-    let conn = rt.block_on(connection())?;
+    let conn = rt.block_on(libsql_connection())?;
     let topic_storage = rt.block_on(LibsqlTopicStorage::init(conn.clone()))?;
     let session_storage = rt.block_on(LibsqlSessionStorage::init(conn))?;
 

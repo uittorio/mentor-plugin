@@ -1,32 +1,36 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use libsql::{Connection, params};
+use libsql::params;
 use uuid::Uuid;
 
+use crate::libsql::libsql_storage::LibsqlConnection;
 use crate::session::{Session, SessionId};
 use crate::session_storage::SessionStorage;
 
-pub struct LibsqlSessionStorage(Arc<Connection>);
+pub struct LibsqlSessionStorage(Arc<LibsqlConnection>);
 
 impl LibsqlSessionStorage {
-    pub async fn init(connection: Arc<Connection>) -> eyre::Result<Self> {
-        let storage = LibsqlSessionStorage(connection);
+    pub async fn init(conn: Arc<LibsqlConnection>) -> eyre::Result<Self> {
+        let storage = LibsqlSessionStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
     }
 
     #[cfg(test)]
     pub async fn init_inmemory() -> eyre::Result<Self> {
-        let database = libsql::Builder::new_local(":memory:").build().await?;
+        use libsql::Builder;
+        let database = Arc::new(Builder::new_local(":memory:").build().await?);
         let connection = Arc::new(database.connect()?);
-        let storage = LibsqlSessionStorage(connection);
+        let conn = Arc::new(LibsqlConnection { database, connection });
+        let storage = LibsqlSessionStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
     }
 
     async fn create_tables(&self) -> eyre::Result<()> {
         self.0
+            .connection
             .execute_batch(
                 "BEGIN;
             CREATE TABLE IF NOT EXISTS sessions (
@@ -60,6 +64,7 @@ impl LibsqlSessionStorage {
 impl SessionStorage for LibsqlSessionStorage {
     async fn create(&self, session: &Session) -> eyre::Result<()> {
         self.0
+            .connection
             .execute(
                 "
             INSERT INTO sessions (id, name, created_at, modified_at, content)
@@ -79,6 +84,7 @@ impl SessionStorage for LibsqlSessionStorage {
 
     async fn update(&self, session: &Session) -> eyre::Result<()> {
         self.0
+            .connection
             .execute(
                 "
             UPDATE sessions
@@ -98,6 +104,7 @@ impl SessionStorage for LibsqlSessionStorage {
     async fn get(&self, session_id: &SessionId) -> eyre::Result<Option<Session>> {
         let statement = self
             .0
+            .connection
             .prepare(
                 "
             SELECT s.id, s.name, s.created_at, s.modified_at, s.content
@@ -117,6 +124,7 @@ impl SessionStorage for LibsqlSessionStorage {
     async fn get_all(&self) -> eyre::Result<Vec<Session>> {
         let statement = self
             .0
+            .connection
             .prepare(
                 "
             SELECT s.id, s.name, s.created_at, s.modified_at, s.content

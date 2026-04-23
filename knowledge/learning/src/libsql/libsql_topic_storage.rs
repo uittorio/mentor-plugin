@@ -1,32 +1,35 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use libsql::{Connection, params};
+use libsql::params;
 
 use crate::category::Category;
+use crate::libsql::libsql_storage::LibsqlConnection;
 use crate::topic::{Topic, TopicCategories};
 use crate::topic_storage::TopicStorage;
 
-pub struct LibsqlTopicStorage(Arc<Connection>);
+pub struct LibsqlTopicStorage(Arc<LibsqlConnection>);
 
 impl LibsqlTopicStorage {
-    pub async fn init(connection: Arc<Connection>) -> eyre::Result<Self> {
-        let storage = LibsqlTopicStorage(connection);
+    pub async fn init(conn: Arc<LibsqlConnection>) -> eyre::Result<Self> {
+        let storage = LibsqlTopicStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
     }
 
     #[cfg(test)]
     pub async fn init_inmemory() -> eyre::Result<Self> {
-        let database = libsql::Builder::new_local(":memory:").build().await?;
+        use libsql::Builder;
+        let database = Arc::new(Builder::new_local(":memory:").build().await?);
         let connection = Arc::new(database.connect()?);
-        let storage = LibsqlTopicStorage(connection);
+        let conn = Arc::new(LibsqlConnection { database, connection });
+        let storage = LibsqlTopicStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
     }
 
     async fn create_tables(&self) -> eyre::Result<()> {
-        self.0
+        self.0.connection
             .execute_batch(
                 "PRAGMA foreign_keys = ON;
             BEGIN;
@@ -82,6 +85,7 @@ impl TopicStorage for LibsqlTopicStorage {
     async fn get_overdue(&self, now: u64) -> eyre::Result<Vec<Topic>> {
         let statement = self
             .0
+            .connection
             .prepare(
                 "
             SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at, t.categories
@@ -103,6 +107,7 @@ impl TopicStorage for LibsqlTopicStorage {
     async fn get_all(&self) -> eyre::Result<Vec<Topic>> {
         let statement = self
             .0
+            .connection
             .prepare(
                 "
             SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at, t.categories
@@ -122,6 +127,7 @@ impl TopicStorage for LibsqlTopicStorage {
     async fn get(&self, topic: &str) -> eyre::Result<Option<Topic>> {
         let statement = self
             .0
+            .connection
             .prepare(
                 "
             SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at, t.categories
@@ -140,7 +146,7 @@ impl TopicStorage for LibsqlTopicStorage {
 
     async fn upsert(&self, topic: &Topic) -> eyre::Result<()> {
         let categories = Self::categories_to_string(&topic.categories);
-        self.0
+        self.0.connection
             .execute(
                 "
             INSERT INTO topics (name, repetitions, interval_days, ease_factor, reviewed_at, categories)
