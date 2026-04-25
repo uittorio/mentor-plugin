@@ -24,15 +24,19 @@ MCP_DEST="${HOME}/.config/opencode/agent-mentor/mcp-server.sh"
 echo ""
 mkdir -p "${SKILLS_DEST}/mentor+"
 download "skills/mentor+/SKILL.md" "${SKILLS_DEST}/mentor+/SKILL.md"
-echo "✓ Skills mentor+ installed → ${SKILLS_DEST}"
+echo "✓ Skill mentor+ installed → ${SKILLS_DEST}"
+
+mkdir -p "${SKILLS_DEST}/mentor+flow"
+download "skills/mentor+flow/SKILL.md" "${SKILLS_DEST}/mentor+flow/SKILL.md"
+echo "✓ Skill mentor+flow installed → ${SKILLS_DEST}"
 
 mkdir -p "${SKILLS_DEST}/mentor+categorize"
 download "skills/mentor+categorize/SKILL.md" "${SKILLS_DEST}/mentor+categorize/SKILL.md"
-echo "✓ Skills mentor+categorize installed → ${SKILLS_DEST}"
+echo "✓ Skill mentor+categorize installed → ${SKILLS_DEST}"
 
 mkdir -p "${SKILLS_DEST}/mentor+summarise"
 download "skills/mentor+summarise/SKILL.md" "${SKILLS_DEST}/mentor+summarise/SKILL.md"
-echo "✓ Skills mentor+summarise installed → ${SKILLS_DEST}"
+echo "✓ Skill mentor+summarise installed → ${SKILLS_DEST}"
 
 # ── MCP server script ────────────────────────────────────────────────────────
 mkdir -p "$(dirname "$MCP_DEST")"
