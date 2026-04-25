@@ -617,7 +617,7 @@ dependencies = [
 
 [[package]]
 name = "dashboard"
-version = "0.0.38"
+version = "0.0.39"
 dependencies = [
  "chrono",
  "color-eyre",
@@ -1349,7 +1349,7 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "learning"
-version = "0.0.38"
+version = "0.0.39"
 dependencies = [
  "async-trait",
  "eyre",
@@ -1502,7 +1502,7 @@ dependencies = [
 
 [[package]]
 name = "mcp"
-version = "0.0.38"
+version = "0.0.39"
 dependencies = [
  "learning",
  "rmcp",
@@ -1557,7 +1557,7 @@ dependencies = [
 
 [[package]]
 name = "migrations"
-version = "0.0.38"
+version = "0.0.39"
 dependencies = [
  "eyre",
  "learning",
