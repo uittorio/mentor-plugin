@@ -1,12 +1,11 @@
-use std::{fs, path::Path, sync::Arc};
-
-use libsql::{Builder, Connection, Database};
-use serde::Deserialize;
+use std::{fs, path::Path, sync::Arc, time::Duration};
 
 use crate::file_storage::file_storage_folder;
+use serde::Deserialize;
+use tokio::time::sleep;
+use turso::{Connection, sync::Builder};
 
-pub struct LibsqlConnection {
-    pub database: Arc<Database>,
+pub struct SqlConnection {
     pub connection: Arc<Connection>,
 }
 
@@ -52,33 +51,39 @@ pub fn config() -> eyre::Result<Option<SyncConfig>> {
     return Ok(sync);
 }
 
-pub async fn libsql_connection() -> eyre::Result<Arc<LibsqlConnection>> {
+pub async fn sql_connection() -> eyre::Result<Arc<SqlConnection>> {
     let config = config()?;
     let local_path = db_path()?;
 
     match config {
         Some(config) => {
             let database = Arc::new(
-                Builder::new_remote_replica(local_path, config.turso.url, config.turso.token)
+                Builder::new_remote(&local_path)
+                    .with_remote_url(config.turso.url)
+                    .with_auth_token(config.turso.token)
+                    .bootstrap_if_empty(true)
                     .build()
                     .await?,
             );
 
-            let connection = Arc::new(database.connect()?);
-            database.sync().await?;
+            let push_db = database.clone();
+            tokio::spawn(async move {
+                loop {
+                    sleep(Duration::from_secs(5)).await;
+                    push_db.push().await.ok();
+                }
+            });
 
-            Ok(Arc::new(LibsqlConnection {
-                database,
-                connection,
-            }))
+            let connect: Connection = database.connect().await?;
+            let connection = Arc::new(connect);
+            database.pull().await?;
+
+            Ok(Arc::new(SqlConnection { connection }))
         }
         None => {
-            let database = Arc::new(Builder::new_local(local_path).build().await?);
+            let database = turso::Builder::new_local(&local_path).build().await?;
             let connection = Arc::new(database.connect()?);
-            Ok(Arc::new(LibsqlConnection {
-                database,
-                connection,
-            }))
+            Ok(Arc::new(SqlConnection { connection }))
         }
     }
 }

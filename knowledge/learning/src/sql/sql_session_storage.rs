@@ -1,29 +1,30 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use libsql::params;
+use turso::{Row, params};
 use uuid::Uuid;
 
-use crate::libsql::libsql_storage::LibsqlConnection;
 use crate::session::{Session, SessionId};
 use crate::session_storage::SessionStorage;
+use crate::sql::sql_storage::SqlConnection;
 
-pub struct LibsqlSessionStorage(Arc<LibsqlConnection>);
+pub struct SqlSessionStorage(Arc<SqlConnection>);
 
-impl LibsqlSessionStorage {
-    pub async fn init(conn: Arc<LibsqlConnection>) -> eyre::Result<Self> {
-        let storage = LibsqlSessionStorage(conn);
+impl SqlSessionStorage {
+    pub async fn init(conn: Arc<SqlConnection>) -> eyre::Result<Self> {
+        let storage = SqlSessionStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
     }
 
     #[cfg(test)]
     pub async fn init_inmemory() -> eyre::Result<Self> {
-        use libsql::Builder;
+        use turso::Builder;
+
         let database = Arc::new(Builder::new_local(":memory:").build().await?);
         let connection = Arc::new(database.connect()?);
-        let conn = Arc::new(LibsqlConnection { database, connection });
-        let storage = LibsqlSessionStorage(conn);
+        let conn = Arc::new(SqlConnection { connection });
+        let storage = SqlSessionStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
     }
@@ -47,7 +48,7 @@ impl LibsqlSessionStorage {
         Ok(())
     }
 
-    fn map(&self, row: &libsql::Row) -> eyre::Result<Session> {
+    fn map(&self, row: &Row) -> eyre::Result<Session> {
         let id_raw: String = row.get(0)?;
         let uuid = Uuid::parse_str(&id_raw)?;
         Ok(Session {
@@ -61,7 +62,7 @@ impl LibsqlSessionStorage {
 }
 
 #[async_trait]
-impl SessionStorage for LibsqlSessionStorage {
+impl SessionStorage for SqlSessionStorage {
     async fn create(&self, session: &Session) -> eyre::Result<()> {
         self.0
             .connection
@@ -102,7 +103,7 @@ impl SessionStorage for LibsqlSessionStorage {
     }
 
     async fn get(&self, session_id: &SessionId) -> eyre::Result<Option<Session>> {
-        let statement = self
+        let mut statement = self
             .0
             .connection
             .prepare(
@@ -122,7 +123,7 @@ impl SessionStorage for LibsqlSessionStorage {
     }
 
     async fn get_all(&self) -> eyre::Result<Vec<Session>> {
-        let statement = self
+        let mut statement = self
             .0
             .connection
             .prepare(
@@ -151,7 +152,7 @@ mod tests {
 
     #[tokio::test]
     async fn create() {
-        let storage = LibsqlSessionStorage::init_inmemory().await.unwrap();
+        let storage = SqlSessionStorage::init_inmemory().await.unwrap();
 
         let session_id = SessionId::new();
         storage
@@ -174,7 +175,7 @@ mod tests {
 
     #[tokio::test]
     async fn update() {
-        let storage = LibsqlSessionStorage::init_inmemory().await.unwrap();
+        let storage = SqlSessionStorage::init_inmemory().await.unwrap();
 
         let session_id = SessionId::new();
 
@@ -200,7 +201,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_all() {
-        let storage = LibsqlSessionStorage::init_inmemory().await.unwrap();
+        let storage = SqlSessionStorage::init_inmemory().await.unwrap();
 
         storage
             .create(&Session {

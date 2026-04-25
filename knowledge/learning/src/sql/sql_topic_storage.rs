@@ -1,35 +1,37 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use libsql::params;
+use turso::{Row, params};
 
 use crate::category::Category;
-use crate::libsql::libsql_storage::LibsqlConnection;
+use crate::sql::sql_storage::SqlConnection;
 use crate::topic::{Topic, TopicCategories};
 use crate::topic_storage::TopicStorage;
 
-pub struct LibsqlTopicStorage(Arc<LibsqlConnection>);
+pub struct SqlTopicStorage(Arc<SqlConnection>);
 
-impl LibsqlTopicStorage {
-    pub async fn init(conn: Arc<LibsqlConnection>) -> eyre::Result<Self> {
-        let storage = LibsqlTopicStorage(conn);
+impl SqlTopicStorage {
+    pub async fn init(conn: Arc<SqlConnection>) -> eyre::Result<Self> {
+        let storage = SqlTopicStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
     }
 
     #[cfg(test)]
     pub async fn init_inmemory() -> eyre::Result<Self> {
-        use libsql::Builder;
+        use turso::Builder;
+
         let database = Arc::new(Builder::new_local(":memory:").build().await?);
         let connection = Arc::new(database.connect()?);
-        let conn = Arc::new(LibsqlConnection { database, connection });
-        let storage = LibsqlTopicStorage(conn);
+        let conn = Arc::new(SqlConnection { connection });
+        let storage = SqlTopicStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
     }
 
     async fn create_tables(&self) -> eyre::Result<()> {
-        self.0.connection
+        self.0
+            .connection
             .execute_batch(
                 "PRAGMA foreign_keys = ON;
             BEGIN;
@@ -50,7 +52,7 @@ impl LibsqlTopicStorage {
         Ok(())
     }
 
-    fn map(&self, row: &libsql::Row) -> eyre::Result<Topic> {
+    fn map(&self, row: &Row) -> eyre::Result<Topic> {
         let categories_raw: String = row.get(5)?;
         let categories = categories_raw
             .split(",")
@@ -81,9 +83,9 @@ impl LibsqlTopicStorage {
 }
 
 #[async_trait]
-impl TopicStorage for LibsqlTopicStorage {
+impl TopicStorage for SqlTopicStorage {
     async fn get_overdue(&self, now: u64) -> eyre::Result<Vec<Topic>> {
-        let statement = self
+        let mut statement = self
             .0
             .connection
             .prepare(
@@ -105,7 +107,7 @@ impl TopicStorage for LibsqlTopicStorage {
     }
 
     async fn get_all(&self) -> eyre::Result<Vec<Topic>> {
-        let statement = self
+        let mut statement = self
             .0
             .connection
             .prepare(
@@ -125,7 +127,7 @@ impl TopicStorage for LibsqlTopicStorage {
     }
 
     async fn get(&self, topic: &str) -> eyre::Result<Option<Topic>> {
-        let statement = self
+        let mut statement = self
             .0
             .connection
             .prepare(
@@ -179,7 +181,7 @@ mod tests {
 
     #[tokio::test]
     async fn upsert_and_get() {
-        let storage = LibsqlTopicStorage::init_inmemory().await.unwrap();
+        let storage = SqlTopicStorage::init_inmemory().await.unwrap();
 
         storage.upsert(&Topic::new("test", 1000)).await.unwrap();
 
@@ -190,7 +192,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_all() {
-        let storage = LibsqlTopicStorage::init_inmemory().await.unwrap();
+        let storage = SqlTopicStorage::init_inmemory().await.unwrap();
 
         storage.upsert(&Topic::new("test 1", 1000)).await.unwrap();
         storage.upsert(&Topic::new("test 2", 1000)).await.unwrap();
@@ -201,7 +203,7 @@ mod tests {
 
     #[tokio::test]
     async fn update_topic() {
-        let storage = LibsqlTopicStorage::init_inmemory().await.unwrap();
+        let storage = SqlTopicStorage::init_inmemory().await.unwrap();
 
         let mut topic = Topic::new("test 1", 1200);
         storage.upsert(&topic).await.unwrap();
@@ -223,7 +225,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_overdue() {
-        let storage = LibsqlTopicStorage::init_inmemory().await.unwrap();
+        let storage = SqlTopicStorage::init_inmemory().await.unwrap();
         let today_seconds = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|t| t.as_secs())

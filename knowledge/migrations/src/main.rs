@@ -1,25 +1,27 @@
 use std::{fs, path::Path, sync::Arc};
 
 use learning::file_storage::file_storage_folder;
-use learning::libsql::libsql_storage::libsql_connection;
-use libsql::{Connection, params};
+use learning::sql::sql_storage::{SqlConnection, sql_connection};
+use turso::{Row, params};
 
 #[tokio::main]
 async fn main() {
-    let conn = libsql_connection().await.unwrap();
-    session_file_path_to_file_name(&conn.connection).await;
-    make_file_name_required(&conn.connection).await;
-    add_categories_to_topics(&conn.connection).await;
-    add_content_to_sessions(&conn.connection).await;
+    let conn = sql_connection().await.unwrap();
+    session_file_path_to_file_name(&conn).await;
+    make_file_name_required(&conn).await;
+    add_categories_to_topics(&conn).await;
+    add_content_to_sessions(&conn).await;
 }
 
 // 0.0.29 onwards
-async fn session_file_path_to_file_name(conn: &Arc<Connection>) {
-    conn.execute("ALTER TABLE sessions ADD COLUMN file_name TEXT;", ())
+async fn session_file_path_to_file_name(conn: &Arc<SqlConnection>) {
+    conn.connection
+        .execute("ALTER TABLE sessions ADD COLUMN file_name TEXT;", ())
         .await
         .unwrap();
 
-    let statement = conn
+    let mut statement = conn
+        .connection
         .prepare(
             "SELECT id, name, created_at, modified_at, file_name, file_path from sessions
         WHERE file_name is NULL",
@@ -46,23 +48,26 @@ async fn session_file_path_to_file_name(conn: &Arc<Connection>) {
             })
             .unwrap();
 
-        conn.execute(
-            "UPDATE sessions SET file_name = ?1 WHERE id = ?2",
-            params![file_name, ele.id.clone()],
-        )
-        .await
-        .unwrap();
+        conn.connection
+            .execute(
+                "UPDATE sessions SET file_name = ?1 WHERE id = ?2",
+                params![file_name, ele.id.clone()],
+            )
+            .await
+            .unwrap();
     }
 
-    conn.execute("ALTER TABLE sessions DROP COLUMN file_path;", ())
+    conn.connection
+        .execute("ALTER TABLE sessions DROP COLUMN file_path;", ())
         .await
         .unwrap();
 }
 
 // 0.0.30 onwards
-async fn make_file_name_required(conn: &Arc<Connection>) {
-    conn.execute_batch(
-        "BEGIN;
+async fn make_file_name_required(conn: &Arc<SqlConnection>) {
+    conn.connection
+        .execute_batch(
+            "BEGIN;
         CREATE TABLE IF NOT EXISTS sessions_new (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -78,28 +83,31 @@ async fn make_file_name_required(conn: &Arc<Connection>) {
         ALTER TABLE sessions_new RENAME TO sessions;
         COMMIT;
         ",
-    )
-    .await
-    .unwrap();
+        )
+        .await
+        .unwrap();
 }
 
 // 0.0.32 onwards
-async fn add_categories_to_topics(conn: &Arc<Connection>) {
-    conn.execute(
-        "ALTER TABLE topics ADD COLUMN categories TEXT NOT NULL DEFAULT '';",
-        (),
-    )
-    .await
-    .unwrap();
+async fn add_categories_to_topics(conn: &Arc<SqlConnection>) {
+    conn.connection
+        .execute(
+            "ALTER TABLE topics ADD COLUMN categories TEXT NOT NULL DEFAULT '';",
+            (),
+        )
+        .await
+        .unwrap();
 }
 
 // 0.0.34 onwards
-async fn add_content_to_sessions(conn: &Arc<Connection>) {
-    conn.execute("ALTER TABLE sessions ADD COLUMN content TEXT NULL;", ())
+async fn add_content_to_sessions(conn: &Arc<SqlConnection>) {
+    conn.connection
+        .execute("ALTER TABLE sessions ADD COLUMN content TEXT NULL;", ())
         .await
         .unwrap();
 
-    let statement = conn
+    let mut statement = conn
+        .connection
         .prepare(
             "SELECT id, name, created_at, modified_at, file_name, content from sessions
         WHERE content is NULL",
@@ -129,16 +137,17 @@ async fn add_content_to_sessions(conn: &Arc<Connection>) {
             Err(e) => format!("No content found e: {}", e),
         };
 
-        conn.execute(
-            "UPDATE sessions SET content = ?1 WHERE id = ?2",
-            params![content, ele.id.clone()],
-        )
-        .await
-        .unwrap();
+        conn.connection
+            .execute(
+                "UPDATE sessions SET content = ?1 WHERE id = ?2",
+                params![content, ele.id.clone()],
+            )
+            .await
+            .unwrap();
     }
 }
 
-fn map_sessions(row: &libsql::Row) -> SessionWithAllHistoricalFields {
+fn map_sessions(row: &Row) -> SessionWithAllHistoricalFields {
     SessionWithAllHistoricalFields {
         id: row.get(0).unwrap(),
         name: row.get(1).unwrap(),

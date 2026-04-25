@@ -5,8 +5,6 @@
 
 ## Future
 - mcp get all sessions tool for the mentor+summarise
-- document turso integration
-- turso new package released to try
 - keep going with VISION
 - make the skill less developer focused, this could be used for anything
 - WINDOWS support (it just a matter of where copying stuff, binaries for bins and if sh installation works)

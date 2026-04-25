@@ -128,5 +128,26 @@ rm -f ~/.local/bin/mentor-dashboard
 ```
 
 # Sync
-This plugin saves a database and session files in your local computer at this path ~/.local/share/agent-mentor. 
+This plugin through the mcp saves topics and sessions in your local computer at this path ~/.local/share/agent-mentor.
 If you want to re use it across different machines you can can copy and paste the entire content at that folder.
+
+## Turso (optional)
+You can optionally sync your knowledge database to [Turso](https://turso.tech) to keep it in sync across multiple machines automatically.
+
+**Step 1 — Seed the remote database from your existing local file:**
+```bash
+turso db create mentor --from-file ~/.local/share/agent-mentor/knowledge.db
+```
+
+**Step 2 — Get your database URL and token from the Turso dashboard, then create a `sync.toml` file next to the knowledge database:**
+```
+~/.local/share/agent-mentor/sync.toml
+```
+
+```toml
+[turso]
+url = "libsql://your-database.turso.io"
+token = "your-auth-token"
+```
+
+On next start the plugin will sync automatically with Turso.
