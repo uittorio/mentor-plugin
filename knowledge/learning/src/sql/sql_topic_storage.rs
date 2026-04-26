@@ -82,7 +82,7 @@ impl SqlTopicStorage {
 #[async_trait]
 impl TopicStorage for SqlTopicStorage {
     async fn get_overdue(&self, now: u64) -> eyre::Result<Vec<Topic>> {
-        let mut statement = self
+        let statement = self
             .0
             .connection
             .prepare(
@@ -104,7 +104,7 @@ impl TopicStorage for SqlTopicStorage {
     }
 
     async fn get_all(&self) -> eyre::Result<Vec<Topic>> {
-        let mut statement = self
+        let statement = self
             .0
             .connection
             .prepare(
@@ -124,7 +124,7 @@ impl TopicStorage for SqlTopicStorage {
     }
 
     async fn get(&self, topic: &str) -> eyre::Result<Option<Topic>> {
-        let mut statement = self
+        let statement = self
             .0
             .connection
             .prepare(

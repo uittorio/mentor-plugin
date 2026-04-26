@@ -21,7 +21,7 @@ async fn session_file_path_to_file_name(conn: &Arc<SqlConnection>) {
         .await
         .unwrap();
 
-    let mut statement = conn
+    let statement = conn
         .connection
         .prepare(
             "SELECT id, name, created_at, modified_at, file_name, file_path from sessions
@@ -107,7 +107,7 @@ async fn add_content_to_sessions(conn: &Arc<SqlConnection>) {
         .await
         .unwrap();
 
-    let mut statement = conn
+    let statement = conn
         .connection
         .prepare(
             "SELECT id, name, created_at, modified_at, file_name, content from sessions

@@ -18,7 +18,7 @@ impl SqlSessionStorage {
     }
 
     #[cfg(test)]
-    pub async fn init_inmemory() -> eyre::Result<Self> {
+    pub async fn init_memory() -> eyre::Result<Self> {
         let conn = Arc::new(SqlConnection::new_inmemory().await?);
         let storage = SqlSessionStorage(conn);
         storage.create_tables().await?;
@@ -102,7 +102,7 @@ impl SessionStorage for SqlSessionStorage {
     }
 
     async fn get(&self, session_id: &SessionId) -> eyre::Result<Option<Session>> {
-        let mut statement = self
+        let statement = self
             .0
             .connection
             .prepare(
@@ -122,7 +122,7 @@ impl SessionStorage for SqlSessionStorage {
     }
 
     async fn get_all(&self) -> eyre::Result<Vec<Session>> {
-        let mut statement = self
+        let statement = self
             .0
             .connection
             .prepare(
@@ -151,7 +151,7 @@ mod tests {
 
     #[tokio::test]
     async fn create() {
-        let storage = SqlSessionStorage::init_inmemory().await.unwrap();
+        let storage = SqlSessionStorage::init_memory().await.unwrap();
 
         let session_id = SessionId::new();
         storage
@@ -174,7 +174,7 @@ mod tests {
 
     #[tokio::test]
     async fn update() {
-        let storage = SqlSessionStorage::init_inmemory().await.unwrap();
+        let storage = SqlSessionStorage::init_memory().await.unwrap();
 
         let session_id = SessionId::new();
 
@@ -200,7 +200,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_all() {
-        let storage = SqlSessionStorage::init_inmemory().await.unwrap();
+        let storage = SqlSessionStorage::init_memory().await.unwrap();
 
         storage
             .create(&Session {
