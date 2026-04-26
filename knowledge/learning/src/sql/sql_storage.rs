@@ -1,12 +1,53 @@
-use std::{fs, path::Path, sync::Arc, time::Duration};
+use std::{fs, path::Path, sync::Arc};
 
 use crate::file_storage::file_storage_folder;
+use libsql::{Builder, Connection, Database};
 use serde::Deserialize;
-use tokio::time::sleep;
-use turso::{Connection, sync::Builder};
 
 pub struct SqlConnection {
-    pub connection: Arc<Connection>,
+    pub connection: Connection,
+    _database: Option<Arc<Database>>,
+}
+
+impl SqlConnection {
+    pub async fn new() -> eyre::Result<SqlConnection> {
+        let config = config()?;
+        let local_path = db_path()?;
+
+        match config {
+            Some(config) => {
+                let database = Arc::new(
+                    Builder::new_remote_replica(local_path, config.turso.url, config.turso.token)
+                        .build()
+                        .await?,
+                );
+                let connection = database.connect()?;
+                database.sync().await?;
+                Ok(SqlConnection {
+                    connection,
+                    _database: Some(database),
+                })
+            }
+            None => {
+                let database = Builder::new_local(local_path).build().await?;
+                let connection = database.connect()?;
+                Ok(SqlConnection {
+                    connection,
+                    _database: None,
+                })
+            }
+        }
+    }
+
+    #[cfg(test)]
+    pub async fn new_inmemory() -> eyre::Result<SqlConnection> {
+        let database = Builder::new_local(":memory:").build().await?;
+        let connection = database.connect()?;
+        Ok(SqlConnection {
+            connection,
+            _database: None,
+        })
+    }
 }
 
 pub fn db_path() -> eyre::Result<String> {
@@ -49,41 +90,4 @@ pub fn config() -> eyre::Result<Option<SyncConfig>> {
     };
 
     return Ok(sync);
-}
-
-pub async fn sql_connection() -> eyre::Result<Arc<SqlConnection>> {
-    let config = config()?;
-    let local_path = db_path()?;
-
-    match config {
-        Some(config) => {
-            let database = Arc::new(
-                Builder::new_remote(&local_path)
-                    .with_remote_url(config.turso.url)
-                    .with_auth_token(config.turso.token)
-                    .bootstrap_if_empty(true)
-                    .build()
-                    .await?,
-            );
-
-            let push_db = database.clone();
-            tokio::spawn(async move {
-                loop {
-                    sleep(Duration::from_secs(5)).await;
-                    push_db.push().await.ok();
-                }
-            });
-
-            let connect: Connection = database.connect().await?;
-            let connection = Arc::new(connect);
-            database.pull().await?;
-
-            Ok(Arc::new(SqlConnection { connection }))
-        }
-        None => {
-            let database = turso::Builder::new_local(&local_path).build().await?;
-            let connection = Arc::new(database.connect()?);
-            Ok(Arc::new(SqlConnection { connection }))
-        }
-    }
 }

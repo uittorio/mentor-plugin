@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use turso::{Row, params};
+use libsql::{Row, params};
 use uuid::Uuid;
 
 use crate::session::{Session, SessionId};
@@ -19,11 +19,7 @@ impl SqlSessionStorage {
 
     #[cfg(test)]
     pub async fn init_inmemory() -> eyre::Result<Self> {
-        use turso::Builder;
-
-        let database = Arc::new(Builder::new_local(":memory:").build().await?);
-        let connection = Arc::new(database.connect()?);
-        let conn = Arc::new(SqlConnection { connection });
+        let conn = Arc::new(SqlConnection::new_inmemory().await?);
         let storage = SqlSessionStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
@@ -45,6 +41,7 @@ impl SqlSessionStorage {
             ",
             )
             .await?;
+
         Ok(())
     }
 
@@ -80,6 +77,7 @@ impl SessionStorage for SqlSessionStorage {
                 ],
             )
             .await?;
+
         Ok(())
     }
 
@@ -99,6 +97,7 @@ impl SessionStorage for SqlSessionStorage {
                 ],
             )
             .await?;
+
         Ok(())
     }
 

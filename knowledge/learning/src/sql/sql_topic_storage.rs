@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use turso::{Row, params};
+use libsql::{Row, params};
 
 use crate::category::Category;
 use crate::sql::sql_storage::SqlConnection;
@@ -19,11 +19,7 @@ impl SqlTopicStorage {
 
     #[cfg(test)]
     pub async fn init_inmemory() -> eyre::Result<Self> {
-        use turso::Builder;
-
-        let database = Arc::new(Builder::new_local(":memory:").build().await?);
-        let connection = Arc::new(database.connect()?);
-        let conn = Arc::new(SqlConnection { connection });
+        let conn = Arc::new(SqlConnection::new_inmemory().await?);
         let storage = SqlTopicStorage(conn);
         storage.create_tables().await?;
         Ok(storage)
@@ -49,6 +45,7 @@ impl SqlTopicStorage {
             ",
             )
             .await?;
+
         Ok(())
     }
 
@@ -170,6 +167,7 @@ impl TopicStorage for SqlTopicStorage {
                 ],
             )
             .await?;
+
         Ok(())
     }
 }

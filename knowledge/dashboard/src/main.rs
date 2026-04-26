@@ -1,4 +1,5 @@
 use std::env::Args;
+use std::sync::Arc;
 use std::{
     io::Stdout,
     time::{Duration, Instant},
@@ -7,7 +8,7 @@ use std::{
 use crossterm::event::{Event, KeyCode};
 use learning::session_storage::SessionStorage;
 use learning::sql::sql_session_storage::SqlSessionStorage;
-use learning::sql::sql_storage::sql_connection;
+use learning::sql::sql_storage::SqlConnection;
 use learning::sql::sql_topic_storage::SqlTopicStorage;
 use learning::topic_storage::TopicStorage;
 use ratatui::layout::{Layout, Offset, Rect};
@@ -41,9 +42,10 @@ fn main() -> color_eyre::Result<()> {
 
 fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<()> {
     let rt = tokio::runtime::Runtime::new()?;
-    let conn = rt.block_on(sql_connection())?;
-    let topic_storage = rt.block_on(SqlTopicStorage::init(conn.clone()))?;
-    let session_storage = rt.block_on(SqlSessionStorage::init(conn))?;
+    let conn = rt.block_on(SqlConnection::new())?;
+    let arc_conn = Arc::new(conn);
+    let topic_storage = rt.block_on(SqlTopicStorage::init(arc_conn.clone()))?;
+    let session_storage = rt.block_on(SqlSessionStorage::init(arc_conn.clone()))?;
 
     let mut model = Model::new();
 

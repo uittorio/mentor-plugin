@@ -7,4 +7,4 @@ version.workspace = true
 learning = { path = "../learning" }
 tokio = {version = "1", features = ["full"]}
 eyre = {version = "0.6.12"}
-turso = { version = "0.5.3"}
+libsql = { version = "0.9.30" }

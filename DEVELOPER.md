@@ -41,6 +41,10 @@ chmod +x .git/hooks/pre-commit
 - `scripts/` — Release and utility scripts
 
 
+## Architecture decisions
+
+See the [`adr/`](./adr/) folder for records of significant technical decisions.
+
 ## Testing strategy
 
 This project ships different components to be used with coding agent or just a simple binaries. It also contains business logic in the main components to make decisions about topic etc. 
