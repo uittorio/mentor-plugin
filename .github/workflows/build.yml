@@ -1,0 +1,123 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ matrix.os }}-${{ hashFiles('knowledge/Cargo.lock') }}
+          restore-keys: cargo-${{ matrix.os }}-
+
+      - name: Test
+        run: cargo test --lib --bins
+        working-directory: knowledge
+
+  build:
+    needs: tests
+    name: Build binaries (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            mcp_artifact: mentor-mcp-linux-x86_64
+            mcp_binary: mcp
+            dashboard_artifact: mentor-dashboard-linux-x86_64
+            dashboard_binary: mentor-dashboard
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            mcp_artifact: mentor-mcp-darwin-arm64
+            mcp_binary: mcp
+            dashboard_artifact: mentor-dashboard-darwin-arm64
+            dashboard_binary: mentor-dashboard
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            knowledge/target
+          key: cargo-${{ matrix.target }}-${{ hashFiles('knowledge/Cargo.lock') }}
+          restore-keys: cargo-${{ matrix.target }}-
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+        working-directory: knowledge
+
+      - name: Rename mcp binary
+        run: cp knowledge/target/${{ matrix.target }}/release/${{ matrix.mcp_binary }} ${{ matrix.mcp_artifact }}
+
+      - name: Rename dashboard binary
+        run: cp knowledge/target/${{ matrix.target }}/release/${{ matrix.dashboard_binary }} ${{ matrix.dashboard_artifact }}
+
+      - uses: actions/upload-artifact@v6
+        name: Upload mcp artifact
+        with:
+          name: ${{ matrix.mcp_artifact }}
+          path: ${{ matrix.mcp_artifact }}
+
+      - uses: actions/upload-artifact@v6
+        name: Upload dashboard artifact
+        with:
+          name: ${{ matrix.dashboard_artifact }}
+          path: ${{ matrix.dashboard_artifact }}
+
+  e2e_tests:
+    needs: build
+    name: E2E Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: mentor-mcp-linux-x86_64
+          - os: macos-latest
+            artifact: mentor-mcp-darwin-arm64
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ matrix.os }}-${{ hashFiles('knowledge/Cargo.lock') }}
+          restore-keys: cargo-${{ matrix.os }}-
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: ${{ matrix.artifact }}
+          path: knowledge
+
+      - name: Make binary executable
+        run: chmod +x ${{ matrix.artifact }}
+        working-directory: knowledge
+
+      - name: Test
+        run: BINARY_PATH=../${{ matrix.artifact }} cargo test --test e2e
+        working-directory: knowledge

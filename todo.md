@@ -1,5 +1,4 @@
 ## Reflections on development
-- migration project is not automated. a lot of manual steps.
 - release process/push creates too many actions. I usually push to main then create a release. A release trigger twice
 - dates are weird.. described all in seconds since epoc but difficult to remember in the codebase
 

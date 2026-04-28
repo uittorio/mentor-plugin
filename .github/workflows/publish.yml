@@ -1,35 +1,10 @@
-name: Publish
+name: Release
 
 on:
   push:
-    branches: [main]
     tags: ["v*"]
 
 jobs:
-  tests:
-    name: Test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/cache@v5
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ matrix.os }}-${{ hashFiles('knowledge/Cargo.lock') }}
-          restore-keys: cargo-${{ matrix.os }}-
-
-      - name: Test
-        run: cargo test --lib --bins
-        working-directory: knowledge
-
-  # ── 1. Build Rust binaries ─────────────────────────────────────────────────
   build:
     needs: tests
     name: Build binaries (${{ matrix.os }})
@@ -88,48 +63,10 @@ jobs:
           name: ${{ matrix.dashboard_artifact }}
           path: ${{ matrix.dashboard_artifact }}
 
-  e2e_tests:
-    needs: build
-    name: E2E Test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            artifact: mentor-mcp-linux-x86_64
-          - os: macos-latest
-            artifact: mentor-mcp-darwin-arm64
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/cache@v5
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ matrix.os }}-${{ hashFiles('knowledge/Cargo.lock') }}
-          restore-keys: cargo-${{ matrix.os }}-
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: ${{ matrix.artifact }}
-          path: knowledge
-
-      - name: Make binary executable
-        run: chmod +x ${{ matrix.artifact }}
-        working-directory: knowledge
-
-      - name: Test
-        run: BINARY_PATH=../${{ matrix.artifact }} cargo test --test e2e
-        working-directory: knowledge
-
-  # ── 2. Release + publish plugin branch (tags only) ─────────────────────────
   publish:
     name: Publish
     needs: e2e_tests
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
