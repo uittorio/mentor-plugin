@@ -1,51 +1,19 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use libsql::{Row, params};
-use uuid::Uuid;
+use libsql::Row;
+use libsql::params;
 
 use crate::session::{Session, SessionId};
 use crate::session_storage::SessionStorage;
 use crate::sql::sql_storage::SqlConnection;
 
-pub struct SqlSessionStorage(Arc<SqlConnection>);
+pub struct SqlSessionStorage(pub Arc<SqlConnection>);
 
 impl SqlSessionStorage {
-    pub async fn init(conn: Arc<SqlConnection>) -> eyre::Result<Self> {
-        let storage = SqlSessionStorage(conn);
-        storage.create_tables().await?;
-        Ok(storage)
-    }
-
-    #[cfg(test)]
-    pub async fn init_memory() -> eyre::Result<Self> {
-        let conn = Arc::new(SqlConnection::new_inmemory().await?);
-        let storage = SqlSessionStorage(conn);
-        storage.create_tables().await?;
-        Ok(storage)
-    }
-
-    async fn create_tables(&self) -> eyre::Result<()> {
-        self.0
-            .connection
-            .execute_batch(
-                "BEGIN;
-            CREATE TABLE IF NOT EXISTS sessions (
-              id TEXT PRIMARY KEY,
-              name TEXT NOT NULL UNIQUE COLLATE NOCASE,
-              created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-              modified_at INTEGER NOT NULL DEFAULT (unixepoch()),
-              content TEXT NULL
-            );
-            COMMIT;
-            ",
-            )
-            .await?;
-
-        Ok(())
-    }
-
     fn map(&self, row: &Row) -> eyre::Result<Session> {
+        use uuid::Uuid;
+
         let id_raw: String = row.get(0)?;
         let uuid = Uuid::parse_str(&id_raw)?;
         Ok(Session {
@@ -151,7 +119,8 @@ mod tests {
 
     #[tokio::test]
     async fn create() {
-        let storage = SqlSessionStorage::init_memory().await.unwrap();
+        let connection = SqlConnection::new_in_memory().await.unwrap();
+        let storage = SqlSessionStorage(Arc::new(connection));
 
         let session_id = SessionId::new();
         storage
@@ -174,7 +143,8 @@ mod tests {
 
     #[tokio::test]
     async fn update() {
-        let storage = SqlSessionStorage::init_memory().await.unwrap();
+        let connection = SqlConnection::new_in_memory().await.unwrap();
+        let storage = SqlSessionStorage(Arc::new(connection));
 
         let session_id = SessionId::new();
 
@@ -200,7 +170,8 @@ mod tests {
 
     #[tokio::test]
     async fn get_all() {
-        let storage = SqlSessionStorage::init_memory().await.unwrap();
+        let connection = SqlConnection::new_in_memory().await.unwrap();
+        let storage = SqlSessionStorage(Arc::new(connection));
 
         storage
             .create(&Session {

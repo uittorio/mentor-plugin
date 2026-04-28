@@ -31,8 +31,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let conn = SqlConnection::new().await?;
     let arc_conn = Arc::new(conn);
-    let topic_storage = SqlTopicStorage::init(arc_conn.clone()).await?;
-    let session_storage = SqlSessionStorage::init(arc_conn.clone()).await?;
+    let topic_storage = SqlTopicStorage(arc_conn.clone());
+    let session_storage = SqlSessionStorage(arc_conn.clone());
 
     serve_server(
         ToolService::new(Box::new(topic_storage), Box::new(session_storage)),

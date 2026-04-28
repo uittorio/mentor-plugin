@@ -44,8 +44,8 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
     let rt = tokio::runtime::Runtime::new()?;
     let conn = rt.block_on(SqlConnection::new())?;
     let arc_conn = Arc::new(conn);
-    let topic_storage = rt.block_on(SqlTopicStorage::init(arc_conn.clone()))?;
-    let session_storage = rt.block_on(SqlSessionStorage::init(arc_conn.clone()))?;
+    let topic_storage = SqlTopicStorage(arc_conn.clone());
+    let session_storage = SqlSessionStorage(arc_conn.clone());
 
     let mut model = Model::new();
 

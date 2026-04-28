@@ -1,12 +1,11 @@
-use std::{fs, path::Path, sync::Arc};
+use std::{fs, path::Path};
 
-use crate::file_storage::file_storage_folder;
-use libsql::{Builder, Connection, Database};
+use crate::{file_storage::file_storage_folder, sql::migrations::run::run_migrations};
+use libsql::{Builder, Connection};
 use serde::Deserialize;
 
 pub struct SqlConnection {
     pub connection: Connection,
-    _database: Option<Arc<Database>>,
 }
 
 impl SqlConnection {
@@ -16,37 +15,32 @@ impl SqlConnection {
 
         match config {
             Some(config) => {
-                let database = Arc::new(
+                let database =
                     Builder::new_remote_replica(local_path, config.turso.url, config.turso.token)
                         .build()
-                        .await?,
-                );
+                        .await?;
+
                 let connection = database.connect()?;
+
                 database.sync().await?;
-                Ok(SqlConnection {
-                    connection,
-                    _database: Some(database),
-                })
+                run_migrations(&connection).await?;
+                Ok(SqlConnection { connection })
             }
             None => {
                 let database = Builder::new_local(local_path).build().await?;
                 let connection = database.connect()?;
-                Ok(SqlConnection {
-                    connection,
-                    _database: None,
-                })
+                run_migrations(&connection).await?;
+                Ok(SqlConnection { connection })
             }
         }
     }
 
     #[cfg(test)]
-    pub async fn new_inmemory() -> eyre::Result<SqlConnection> {
+    pub async fn new_in_memory() -> eyre::Result<SqlConnection> {
         let database = Builder::new_local(":memory:").build().await?;
         let connection = database.connect()?;
-        Ok(SqlConnection {
-            connection,
-            _database: None,
-        })
+        run_migrations(&connection).await?;
+        Ok(SqlConnection { connection })
     }
 }
 

@@ -10,8 +10,6 @@
 - WINDOWS support (it just a matter of where copying stuff, binaries for bins and if sh installation works)
 
 ## Bugs
-- if you don't do consolidate manually it will loose the progress, you could close the session and consolidation does not happen
-- Some topics review where not useful (like what is a good session summary, this is basically business logic based). I would love the topic to be more generic than specific to my business case.
 
 ## To Study slowly
 - Async trait
