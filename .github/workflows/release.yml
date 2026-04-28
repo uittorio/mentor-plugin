@@ -63,6 +63,7 @@ jobs:
           path: ${{ matrix.dashboard_artifact }}
 
   publish:
+    needs: build
     name: Publish
     runs-on: ubuntu-latest
     permissions:
