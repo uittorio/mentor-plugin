@@ -24,6 +24,6 @@ cargo build
 cd ..
 
 git add "$CLAUDE_PLUGIN_JSON" "$CLAUDE_MARKETPLACE_JSON" "$MCP_SCRIPT" "$KNOWLEDGE_CARGO_TOML" "$KNOWLEDGE_CARGO_TOML_LOCK" "$DASHBOARD_SCRIPT"
-git commit -m "release: v${VERSION} [skip ci]"
+git commit -m "release: v${VERSION}"
 git tag "v${VERSION}"
 git push origin main "v${VERSION}"

@@ -6,6 +6,7 @@ on:
 
 jobs:
   tests:
+    if: "!startsWith(github.event.head_commit.message, 'release:')"
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
