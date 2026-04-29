@@ -10,11 +10,10 @@ pub async fn run_migrations(connection: &Connection) -> eyre::Result<()> {
     match get_version(connection).await? {
         ..1 => {
             migration_0(connection).await?;
+            add_version(connection).await?;
         }
         _ => {}
     }
-
-    add_version(connection).await?;
     Ok(())
 }
 
