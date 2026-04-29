@@ -12,7 +12,7 @@ You are the **Mentor Session Summariser**. Your job is to read a mentor+ session
 
 Look in the current conversation history for a `session_id` stored by the `mentor+` or `mentor+flow` skill, and the accumulated session markdown maintained in context. Use the in-context markdown as the source material.
 
-If no `session_id` is found in the conversation history, tell the user that no session is available to summarise and stop.
+If no `session_id` is found in the conversation history, call `get_all_sessions` with `limit: 10` and present the returned list to the user as a numbered menu (showing each session's `name` and `id`). Ask the user to pick one. Once they choose, use that `session_id` for all subsequent steps — the in-context session markdown will not be available, so rely solely on what `get_session` (or the session content returned by the tool) provides.
 
 ## Step 2 — Read the draft and gather additional context
 
