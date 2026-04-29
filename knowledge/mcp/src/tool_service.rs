@@ -14,6 +14,7 @@ use std::time::SystemTimeError;
 use uuid::Uuid;
 
 use crate::create_session::{CreateSessionParams, CreateSessionResult};
+use crate::get_all_sessions::{GetAllSessionsParams, SessionResult};
 use crate::get_all_topics::TopicResult;
 use crate::update_session::{UpdateSessionParams, UpdateSessionResult};
 use crate::update_topic_categories::{UpdateTopicCategoriesParams, UpdateTopicCategoriesResult};
@@ -253,6 +254,27 @@ impl ToolService {
         };
 
         serde_json::to_string(&result).map_err(|e| e.to_string())
+    }
+
+    #[tool(description = "Get all sessions")]
+    async fn get_all_sessions(
+        &self,
+        params: Parameters<GetAllSessionsParams>,
+    ) -> Result<String, String> {
+        let sessions = self
+            .session_storage
+            .get_all()
+            .await
+            .map_err(|e| e.to_string())?
+            .iter()
+            .take(params.0.limit)
+            .map(|s| SessionResult {
+                name: s.name.clone(),
+                id: s.id.0.to_string(),
+            })
+            .collect::<Vec<_>>();
+
+        serde_json::to_string(&sessions).map_err(|e| e.to_string())
     }
 }
 

@@ -94,6 +94,7 @@ async fn list_tools() {
         "get_topic_candidates",
         "create_session",
         "update_session",
+        "get_all_sessions",
     ];
     expected.sort();
 
