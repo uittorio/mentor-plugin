@@ -1,5 +1,4 @@
 ## Reflections on development
-- dates are weird.. described all in seconds since epoc but difficult to remember in the codebase
 
 ## Future
 - keep going with VISION
@@ -13,7 +12,7 @@
 ### Feedback on mentor skills
 
 ## Mentor+flow
-- not questioning enough
+- Not questioning enough
 - Did not update sessions
 
 ## Mentor+
