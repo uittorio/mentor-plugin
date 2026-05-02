@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use eyre::OptionExt;
 use libsql::{Row, params};
 
 use crate::category::Category;
@@ -21,12 +23,15 @@ impl SqlTopicStorage {
             })
             .collect::<Vec<Category>>();
 
+        let reviewed_at = DateTime::from_timestamp_secs(row.get::<i64>(4)?)
+            .ok_or_eyre("Expecting valid epoc for reviewed_at")?;
+
         Ok(Topic {
             name: row.get(0)?,
             repetitions: row.get::<i64>(1)? as u32,
             interval: row.get::<i64>(2)? as u32,
             ease_factor: row.get::<f64>(3)? as f32,
-            reviewed_at: row.get::<i64>(4)? as u64,
+            reviewed_at: reviewed_at,
             categories: TopicCategories(categories),
         })
     }
@@ -43,7 +48,7 @@ impl SqlTopicStorage {
 
 #[async_trait]
 impl TopicStorage for SqlTopicStorage {
-    async fn get_overdue(&self, now: u64) -> eyre::Result<Vec<Topic>> {
+    async fn get_overdue(&self, now: DateTime<Utc>) -> eyre::Result<Vec<Topic>> {
         let statement = self
             .0
             .connection
@@ -57,7 +62,9 @@ impl TopicStorage for SqlTopicStorage {
             )
             .await?;
 
-        let mut rows = statement.query([now as i64]).await?;
+        let now_seconds = now.timestamp();
+
+        let mut rows = statement.query([now_seconds]).await?;
         let mut topics = Vec::new();
         while let Some(row) = rows.next().await? {
             topics.push(self.map(&row)?);
@@ -73,6 +80,7 @@ impl TopicStorage for SqlTopicStorage {
                 "
             SELECT t.name, t.repetitions, t.interval_days, t.ease_factor, t.reviewed_at, t.categories
             FROM topics t
+            ORDER BY t.reviewed_at DESC
             ",
             )
             .await?;
@@ -124,7 +132,7 @@ impl TopicStorage for SqlTopicStorage {
                     topic.repetitions as i64,
                     topic.interval as i64,
                     topic.ease_factor as f64,
-                    topic.reviewed_at as i64,
+                    topic.reviewed_at.timestamp(),
                     categories
                 ],
             )
@@ -136,6 +144,8 @@ impl TopicStorage for SqlTopicStorage {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Days;
+
     use super::*;
     use crate::topic::Topic;
 
@@ -144,7 +154,13 @@ mod tests {
         let conn = SqlConnection::new_in_memory().await.unwrap();
         let storage = SqlTopicStorage(Arc::new(conn));
 
-        storage.upsert(&Topic::new("test", 1000)).await.unwrap();
+        storage
+            .upsert(&Topic::new(
+                "test",
+                DateTime::from_timestamp_secs(1000).unwrap(),
+            ))
+            .await
+            .unwrap();
 
         let inserted = storage.get("test").await.unwrap().unwrap();
 
@@ -156,9 +172,27 @@ mod tests {
         let conn = SqlConnection::new_in_memory().await.unwrap();
         let storage = SqlTopicStorage(Arc::new(conn));
 
-        storage.upsert(&Topic::new("test 1", 1000)).await.unwrap();
-        storage.upsert(&Topic::new("test 2", 1000)).await.unwrap();
-        storage.upsert(&Topic::new("test 3", 1000)).await.unwrap();
+        storage
+            .upsert(&Topic::new(
+                "test 1",
+                DateTime::from_timestamp_secs(1000).unwrap(),
+            ))
+            .await
+            .unwrap();
+        storage
+            .upsert(&Topic::new(
+                "test 2",
+                DateTime::from_timestamp_secs(1000).unwrap(),
+            ))
+            .await
+            .unwrap();
+        storage
+            .upsert(&Topic::new(
+                "test 3",
+                DateTime::from_timestamp_secs(1000).unwrap(),
+            ))
+            .await
+            .unwrap();
         let topics = storage.get_all().await.unwrap();
         assert_eq!(topics.len(), 3);
     }
@@ -168,14 +202,14 @@ mod tests {
         let conn = SqlConnection::new_in_memory().await.unwrap();
         let storage = SqlTopicStorage(Arc::new(conn));
 
-        let mut topic = Topic::new("test 1", 1200);
+        let mut topic = Topic::new("test 1", DateTime::from_timestamp_secs(1200).unwrap());
         storage.upsert(&topic).await.unwrap();
         topic = storage.get("test 1").await.unwrap().unwrap();
         assert_eq!(topic.ease_factor, 2.5);
         assert_eq!(topic.repetitions, 0);
         assert_eq!(topic.interval, 1);
 
-        topic = topic.update_quality(5, 2000);
+        topic = topic.update_quality(5, DateTime::from_timestamp_secs(2000).unwrap());
         storage.upsert(&topic).await.unwrap();
         topic = storage.get("test 1").await.unwrap().unwrap();
         assert_eq!(topic.ease_factor, 2.6);
@@ -190,12 +224,9 @@ mod tests {
     async fn get_overdue() {
         let conn = SqlConnection::new_in_memory().await.unwrap();
         let storage = SqlTopicStorage(Arc::new(conn));
-        let today_seconds = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|t| t.as_secs())
-            .unwrap();
+        let today_seconds = Utc::now();
 
-        let two_days_ago = today_seconds - (2 * 86400);
+        let two_days_ago = today_seconds.checked_sub_days(Days::new(2)).unwrap();
 
         let mut overdue_topic = Topic::new("test 1", two_days_ago);
         overdue_topic = overdue_topic.update_quality(2, two_days_ago);

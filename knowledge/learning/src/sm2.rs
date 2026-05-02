@@ -1,10 +1,12 @@
+use chrono::{DateTime, Utc};
+
 use crate::topic::Topic;
 
 // - Quality 5 → Ease factor increases
 // - Quality 4 → Ease factor stays the same
 // - Quality 3 → Ease factor decreases slightly
 // - Quality < 3 → Ease factor drops significantly
-pub fn sm2(topic: &Topic, quality: u32, review_date: u64) -> Topic {
+pub fn sm2(topic: &Topic, quality: u32, review_date: DateTime<Utc>) -> Topic {
     let mut updated_repetitions = topic.repetitions;
     let mut updated_interval = topic.interval;
     match quality {
@@ -48,11 +50,16 @@ mod tests {
     #[test]
     fn update_last_review_date() {
         let topic = Topic {
-            reviewed_at: 10000,
+            reviewed_at: DateTime::from_timestamp_secs(1000).unwrap(),
             ..mocked_topic()
         };
 
-        assert_eq!(sm2(&topic, 0, 2000).reviewed_at, 2000)
+        assert_eq!(
+            sm2(&topic, 0, DateTime::from_timestamp_secs(2000).unwrap())
+                .reviewed_at
+                .timestamp(),
+            2000
+        )
     }
 
     #[test]
@@ -63,15 +70,16 @@ mod tests {
             ..mocked_topic()
         };
 
-        let result_quality_0 = sm2(&topic, 0, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        let result_quality_0 = sm2(&topic, 0, reviewed_at);
         assert_eq!(result_quality_0.repetitions, 0);
         assert_eq!(result_quality_0.interval, 1);
 
-        let result_quality_1 = sm2(&topic, 1, 2000);
+        let result_quality_1 = sm2(&topic, 1, reviewed_at);
         assert_eq!(result_quality_1.repetitions, 0);
         assert_eq!(result_quality_1.interval, 1);
 
-        let result_quality_2 = sm2(&topic, 2, 2000);
+        let result_quality_2 = sm2(&topic, 2, reviewed_at);
         assert_eq!(result_quality_2.repetitions, 0);
         assert_eq!(result_quality_2.interval, 1);
     }
@@ -84,10 +92,12 @@ mod tests {
             ..mocked_topic()
         };
 
-        let result_quality_3 = sm2(&topic, 3, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+
+        let result_quality_3 = sm2(&topic, 3, reviewed_at);
         assert_eq!(result_quality_3.repetitions, 1);
 
-        let result_quality_4 = sm2(&topic, 4, 2000);
+        let result_quality_4 = sm2(&topic, 4, reviewed_at);
         assert_eq!(result_quality_4.repetitions, 1);
     }
 
@@ -99,7 +109,8 @@ mod tests {
             ..mocked_topic()
         };
 
-        let result = sm2(&topic, 4, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        let result = sm2(&topic, 4, reviewed_at);
         assert_eq!(result.interval, 6);
     }
 
@@ -111,9 +122,10 @@ mod tests {
             ..mocked_topic()
         };
 
-        let mut result = sm2(&topic, 4, 2000);
-        result = sm2(&result, 4, 2000);
-        result = sm2(&result, 4, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        let mut result = sm2(&topic, 4, reviewed_at);
+        result = sm2(&result, 4, reviewed_at);
+        result = sm2(&result, 4, reviewed_at);
         assert!(result.interval == 13, "expected 13 got {}", result.interval);
     }
 
@@ -126,7 +138,8 @@ mod tests {
             ..mocked_topic()
         };
 
-        let result = sm2(&topic, 1, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        let result = sm2(&topic, 1, reviewed_at);
         assert_eq!(result.ease_factor, 1.3);
     }
 
@@ -139,7 +152,8 @@ mod tests {
             ..mocked_topic()
         };
 
-        let result = sm2(&topic, 5, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        let result = sm2(&topic, 5, reviewed_at);
         assert_eq!(result.ease_factor, 1.5);
     }
 
@@ -152,7 +166,8 @@ mod tests {
             ..mocked_topic()
         };
 
-        let result = sm2(&topic, 4, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        let result = sm2(&topic, 4, reviewed_at);
         assert_eq!(result.ease_factor, 1.4);
     }
 
@@ -165,7 +180,8 @@ mod tests {
             ..mocked_topic()
         };
 
-        let mut result = sm2(&topic, 3, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        let mut result = sm2(&topic, 3, reviewed_at);
         let mut ef = result.ease_factor;
         assert!(
             ef > 3.35 && ef < 3.37,
@@ -173,7 +189,8 @@ mod tests {
             ef
         );
 
-        result = sm2(&topic, 2, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        result = sm2(&topic, 2, reviewed_at);
         ef = result.ease_factor;
         assert!(
             ef > 3.17 && ef < 3.19,
@@ -181,7 +198,8 @@ mod tests {
             ef
         );
 
-        result = sm2(&topic, 1, 2000);
+        let reviewed_at = DateTime::from_timestamp_secs(2000).unwrap();
+        result = sm2(&topic, 1, reviewed_at);
         ef = result.ease_factor;
         assert!(
             ef > 2.95 && ef < 2.97,

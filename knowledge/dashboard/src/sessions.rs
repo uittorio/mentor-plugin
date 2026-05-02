@@ -1,4 +1,3 @@
-use chrono::DateTime;
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -12,12 +11,7 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
     let rows = model.sessions.iter().map(|s| {
         Row::new([
             Cell::from(s.name.as_str()),
-            Cell::from(
-                DateTime::from_timestamp_secs(s.created_at as i64)
-                    .unwrap()
-                    .format("%b %e %T %Y")
-                    .to_string(),
-            ),
+            Cell::from(s.created_at.format("%b %e %T %Y").to_string()),
         ])
     });
 

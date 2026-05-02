@@ -10,7 +10,7 @@ uuid = {version = "1.23.0", features=["v4"]}
 async-trait = {version = "0.1"}
 toml = "1.1.2"
 libsql = { version = "0.9.30" }
-
+chrono = "0.4.44"
 
 [dev-dependencies]
 tokio = {version = "1", features = ["full"]}

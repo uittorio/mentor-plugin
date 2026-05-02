@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use chrono::DateTime;
+use eyre::OptionExt;
 use libsql::Row;
 use libsql::params;
 
@@ -16,11 +18,18 @@ impl SqlSessionStorage {
 
         let id_raw: String = row.get(0)?;
         let uuid = Uuid::parse_str(&id_raw)?;
+
+        let created_at = DateTime::from_timestamp_secs(row.get::<i64>(2)?)
+            .ok_or_eyre("Expecting valid epoc for created_at")?;
+
+        let modified_at = DateTime::from_timestamp_secs(row.get::<i64>(3)?)
+            .ok_or_eyre("Expecting valid epoc for modified_at")?;
+
         Ok(Session {
             id: SessionId(uuid),
             name: row.get(1)?,
-            created_at: row.get::<i64>(2)? as u64,
-            modified_at: row.get::<i64>(3)? as u64,
+            created_at: created_at,
+            modified_at: modified_at,
             content: row.get(4)?,
         })
     }
@@ -39,8 +48,8 @@ impl SessionStorage for SqlSessionStorage {
                 params![
                     session.id.0.to_string(),
                     session.name.clone(),
-                    session.created_at as i64,
-                    session.modified_at as i64,
+                    session.created_at.timestamp(),
+                    session.modified_at.timestamp(),
                     session.content.clone()
                 ],
             )
@@ -59,7 +68,7 @@ impl SessionStorage for SqlSessionStorage {
             WHERE id = ?3
             ",
                 params![
-                    session.modified_at as i64,
+                    session.modified_at.timestamp(),
                     session.content.clone(),
                     session.id.0.to_string()
                 ],
@@ -113,6 +122,8 @@ impl SessionStorage for SqlSessionStorage {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use crate::session::Session;
 
     use super::*;
@@ -127,8 +138,8 @@ mod tests {
             .create(&Session {
                 id: session_id.clone(),
                 name: "session name".to_string(),
-                created_at: 1775764375,
-                modified_at: 1775764371,
+                created_at: date_time(1775764375),
+                modified_at: date_time(1775764371),
                 content: Some("content".to_string()),
             })
             .await
@@ -137,8 +148,8 @@ mod tests {
         let inserted = storage.get(&session_id).await.unwrap().unwrap();
 
         assert_eq!(inserted.name, "session name");
-        assert_eq!(inserted.created_at, 1775764375);
-        assert_eq!(inserted.modified_at, 1775764371);
+        assert_eq!(inserted.created_at, date_time(1775764375));
+        assert_eq!(inserted.modified_at, date_time(1775764371));
     }
 
     #[tokio::test]
@@ -151,21 +162,21 @@ mod tests {
         let session = Session {
             id: session_id.clone(),
             name: "session name".to_string(),
-            created_at: 1775764375,
-            modified_at: 1775764371,
+            created_at: date_time(1775764375),
+            modified_at: date_time(1775764371),
             content: Some("content".to_string()),
         };
 
         storage.create(&session).await.unwrap();
 
-        let update = session.update_content(&"new content".to_string(), 1775764999);
+        let update = session.update_content(&"new content".to_string(), date_time(1775764999));
 
         storage.update(&update).await.unwrap();
 
         let inserted = storage.get(&session_id).await.unwrap().unwrap();
 
         assert_eq!(inserted.content, Some("new content".to_string()));
-        assert_eq!(inserted.modified_at, 1775764999);
+        assert_eq!(inserted.modified_at, date_time(1775764999));
     }
 
     #[tokio::test]
@@ -177,8 +188,8 @@ mod tests {
             .create(&Session {
                 id: SessionId::new(),
                 name: "session name 1".to_string(),
-                created_at: 1775764375,
-                modified_at: 1775764371,
+                created_at: date_time(1775764375),
+                modified_at: date_time(1775764371),
                 content: Some("content".to_string()),
             })
             .await
@@ -188,8 +199,8 @@ mod tests {
             .create(&Session {
                 id: SessionId::new(),
                 name: "session name 2".to_string(),
-                created_at: 1775764375,
-                modified_at: 1775764371,
+                created_at: date_time(1775764375),
+                modified_at: date_time(1775764371),
                 content: Some("content".to_string()),
             })
             .await
@@ -198,5 +209,9 @@ mod tests {
         let sessions = storage.get_all().await.unwrap();
 
         assert_eq!(sessions.len(), 2);
+    }
+
+    fn date_time(seconds: i64) -> DateTime<Utc> {
+        DateTime::from_timestamp_secs(seconds).unwrap()
     }
 }

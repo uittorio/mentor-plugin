@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -12,13 +13,13 @@ impl SessionId {
 pub struct Session {
     pub id: SessionId,
     pub name: String,
-    pub created_at: u64,
-    pub modified_at: u64,
+    pub created_at: DateTime<Utc>,
+    pub modified_at: DateTime<Utc>,
     pub content: Option<String>,
 }
 
 impl Session {
-    pub fn new(name: &str, created_at: u64) -> Self {
+    pub fn new(name: &str, created_at: DateTime<Utc>) -> Self {
         Session {
             id: SessionId::new(),
             name: name.to_string(),
@@ -28,7 +29,7 @@ impl Session {
         }
     }
 
-    pub fn update_content(&self, content: &String, now: u64) -> Session {
+    pub fn update_content(&self, content: &String, now: DateTime<Utc>) -> Session {
         Session {
             id: self.id.clone(),
             name: self.name.clone(),

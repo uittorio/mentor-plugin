@@ -1,4 +1,4 @@
-use chrono::DateTime;
+use chrono::{DateTime, Days, Utc};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -43,19 +43,18 @@ pub fn render_stats(frame: &mut Frame, area: Rect, model: &mut Model) {
     ])
     .areas(block.inner(area));
 
-    let now = now_epoc();
     let seven_days_ago = seven_days_ago();
 
     let topics_overdue = &model
         .topics
         .iter()
-        .filter(|t| t.is_overdue(now))
+        .filter(|t| t.is_overdue(Utc::now()))
         .collect::<Vec<_>>();
 
     let last_7_days_topics = &model
         .topics
         .iter()
-        .filter(|t| t.is_between(seven_days_ago, now))
+        .filter(|t| t.is_between(seven_days_ago, Utc::now()))
         .collect::<Vec<_>>();
 
     let mastered_topics = &model
@@ -170,8 +169,8 @@ pub fn render_categories(frame: &mut Frame, area: Rect, model: &mut Model) {
 }
 
 pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
-    let now = now_epoc();
     let seven_days_ago = seven_days_ago();
+    let now = Utc::now();
 
     let topics_filtered = model.topics.iter().filter(|t| {
         match (
@@ -200,27 +199,18 @@ pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
     });
 
     let rows = topics_filtered.map(|t| {
-        let next_review = t.reviewed_at + t.interval_in_seconds() as u64;
-        let next_review_value = DateTime::from_timestamp_secs(next_review as i64)
-            .unwrap()
-            .format("%b %e %T %Y")
-            .to_string();
+        let next_review = t.next_review().format("%b %e %T %Y").to_string();
 
         let next_review_formatted = if t.is_overdue(now) {
-            format!("{} (overdue)", next_review_value)
+            format!("{} (overdue)", next_review)
         } else {
-            next_review_value
+            next_review
         };
         Row::new([
             Cell::from(t.name.as_str()),
             Cell::from(t.ease_factor.to_string()),
             Cell::from(t.repetitions.to_string()),
-            Cell::from(
-                DateTime::from_timestamp_secs(t.reviewed_at as i64)
-                    .unwrap()
-                    .format("%b %e %T %Y")
-                    .to_string(),
-            ),
+            Cell::from(t.reviewed_at.format("%b %e %T %Y").to_string()),
             Cell::from(next_review_formatted),
         ])
     });
@@ -251,20 +241,6 @@ pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
     frame.render_stateful_widget(table, area, &mut model.topics_state);
 }
 
-pub fn now_epoc() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|t| t.as_secs())
-        .unwrap()
-}
-
-pub fn seven_days_ago() -> u64 {
-    let now = now_epoc();
-
-    let seconds_in_a_minute = 60;
-    let seconds_in_an_hour = seconds_in_a_minute * 60;
-    let seconds_in_a_day = seconds_in_an_hour * 24;
-
-    let seven_days_ago = now - seconds_in_a_day * 7;
-    return seven_days_ago;
+pub fn seven_days_ago() -> DateTime<Utc> {
+    Utc::now().checked_sub_days(Days::new(7)).unwrap()
 }

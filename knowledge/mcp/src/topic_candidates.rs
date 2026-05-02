@@ -11,5 +11,5 @@ pub struct TopicCandidatesParams {
 #[derive(Serialize)]
 pub struct TopicCandidate {
     pub name: String,
-    pub days_since_last_review: u64,
+    pub days_since_last_review: i64,
 }

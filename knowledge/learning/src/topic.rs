@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use chrono::{DateTime, Days, Utc};
 use serde::Serialize;
 
 use crate::{category::Category, sm2::sm2, trigram_similarity::trigram_similarity};
@@ -18,7 +19,7 @@ pub struct Topic {
     pub ease_factor: f32,
 
     // time expressed in seconds since epoc
-    pub reviewed_at: u64,
+    pub reviewed_at: DateTime<Utc>,
 
     pub categories: TopicCategories,
 }
@@ -60,9 +61,8 @@ impl Topic {
         trigram_similarity(value, &self.name) >= 0.2
     }
 
-    pub fn is_overdue(&self, now: u64) -> bool {
-        let seconds_in_a_day = 86400;
-        (now - &self.reviewed_at) / seconds_in_a_day >= self.interval as u64
+    pub fn is_overdue(&self, now: DateTime<Utc>) -> bool {
+        now >= self.next_review()
     }
 
     pub fn interval_in_seconds(&self) -> u32 {
@@ -70,7 +70,12 @@ impl Topic {
         self.interval * seconds_in_a_day
     }
 
-    pub fn is_between(&self, start: u64, end: u64) -> bool {
+    pub fn next_review(&self) -> DateTime<Utc> {
+        let interval_days = Days::new(self.interval as u64);
+        self.reviewed_at.checked_add_days(interval_days).unwrap()
+    }
+
+    pub fn is_between(&self, start: DateTime<Utc>, end: DateTime<Utc>) -> bool {
         self.reviewed_at >= start && self.reviewed_at <= end
     }
 
@@ -78,12 +83,11 @@ impl Topic {
         self.categories.0.iter().any(|t| t.name == category.name)
     }
 
-    pub fn days_since_last_review(&self, now: u64) -> u64 {
-        let seconds_in_a_day = 86400;
-        (now - self.reviewed_at) / seconds_in_a_day
+    pub fn days_since_last_review(&self, now: DateTime<Utc>) -> i64 {
+        (now - self.reviewed_at).num_days()
     }
 
-    pub fn update_quality(&self, quality: u32, review_date: u64) -> Topic {
+    pub fn update_quality(&self, quality: u32, review_date: DateTime<Utc>) -> Topic {
         sm2(&self, quality, review_date)
     }
 
@@ -98,7 +102,7 @@ impl Topic {
         }
     }
 
-    pub fn new(name: &str, reviewed_at: u64) -> Topic {
+    pub fn new(name: &str, reviewed_at: DateTime<Utc>) -> Topic {
         Topic {
             name: name.to_string(),
             repetitions: 0,
@@ -125,7 +129,7 @@ mod tests {
     #[test]
     fn topic_categories_merge() {
         let topic = Topic {
-            reviewed_at: 10000,
+            reviewed_at: DateTime::from_timestamp_secs(1000).unwrap(),
             ..mocked_topic()
         };
 
@@ -157,7 +161,7 @@ pub fn mocked_topic() -> Topic {
         repetitions: 1,
         interval: 10,
         ease_factor: 1.5,
-        reviewed_at: 10000,
+        reviewed_at: DateTime::from_timestamp_secs(10000).unwrap(),
         categories: TopicCategories(vec![]),
     }
 }

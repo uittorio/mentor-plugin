@@ -1,3 +1,4 @@
+use chrono::Utc;
 use learning::session::{Session, SessionId};
 use learning::session_storage::SessionStorage;
 use learning::topic::{QuestionDepth, Topic};
@@ -10,7 +11,6 @@ use rmcp::{
     tool, tool_handler, tool_router,
 };
 use std::str::FromStr;
-use std::time::SystemTimeError;
 use uuid::Uuid;
 
 use crate::create_session::{CreateSessionParams, CreateSessionResult};
@@ -46,12 +46,6 @@ impl ToolService {
             topic_storage,
             session_storage,
         }
-    }
-
-    fn now_epoch(&self) -> Result<u64, SystemTimeError> {
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|t| t.as_secs())
     }
 
     #[tool(
@@ -120,15 +114,15 @@ impl ToolService {
         let topic_name = normalise_topic(&params.0.topic);
 
         let quality = params.0.quality as u32;
-        let epoch_now = self.now_epoch().map_err(|e| e.to_string())?;
+        let now = Utc::now();
         let topic = self
             .topic_storage
             .get(&topic_name)
             .await
             .map_err(|e| e.to_string())?
-            .unwrap_or(Topic::new(&topic_name, epoch_now));
+            .unwrap_or(Topic::new(&topic_name, now));
 
-        let updated_topic = topic.update_quality(quality as u32, epoch_now);
+        let updated_topic = topic.update_quality(quality as u32, now);
 
         self.topic_storage
             .upsert(&updated_topic)
@@ -182,18 +176,18 @@ impl ToolService {
         &self,
         params: Parameters<TopicCandidatesParams>,
     ) -> Result<String, String> {
-        let epoch_now = self.now_epoch().map_err(|e| e.to_string())?;
+        let now = Utc::now();
 
         let results = self
             .topic_storage
-            .get_overdue(epoch_now)
+            .get_overdue(now)
             .await
             .map_err(|e| e.to_string())?
             .iter()
             .take(params.0.limit)
             .map(|t| TopicCandidate {
                 name: t.name.clone(),
-                days_since_last_review: t.days_since_last_review(epoch_now),
+                days_since_last_review: t.days_since_last_review(now),
             })
             .collect::<Vec<TopicCandidate>>();
 
@@ -207,11 +201,11 @@ impl ToolService {
         &self,
         params: Parameters<CreateSessionParams>,
     ) -> Result<String, String> {
-        let epoch_now = self.now_epoch().map_err(|e| e.to_string())?;
+        let now = Utc::now();
 
         let name = &params.0.name;
 
-        let session = Session::new(&name, epoch_now);
+        let session = Session::new(&name, now);
 
         self.session_storage
             .create(&session)
@@ -241,8 +235,7 @@ impl ToolService {
             .map_err(|e| e.to_string())?
             .ok_or("Topic not found")?;
 
-        let epoch_now = self.now_epoch().map_err(|e| e.to_string())?;
-        let session = session.update_content(&params.0.content, epoch_now);
+        let session = session.update_content(&params.0.content, Utc::now());
 
         self.session_storage
             .update(&session)

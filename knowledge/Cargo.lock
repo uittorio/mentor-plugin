@@ -1237,6 +1237,7 @@ name = "learning"
 version = "0.0.45"
 dependencies = [
  "async-trait",
+ "chrono",
  "eyre",
  "libsql",
  "serde",
@@ -1474,6 +1475,7 @@ checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 name = "mcp"
 version = "0.0.45"
 dependencies = [
+ "chrono",
  "learning",
  "rmcp",
  "serde",

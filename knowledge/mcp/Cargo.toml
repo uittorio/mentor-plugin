@@ -8,6 +8,7 @@ tokio = { version = "1", features = ["full"] }
 rmcp = { version = "1.2.0", features = ["server"] }
 serde = {version = "1.0.228"}
 uuid = {version = "1.23.0", features=["v4", "serde"]}
+chrono = "0.4.44"
 learning = { path = "../learning" }
 
 [dev-dependencies]
