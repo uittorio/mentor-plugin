@@ -18,7 +18,6 @@ pub struct Topic {
     // it increases with higher quality
     pub ease_factor: f32,
 
-    // time expressed in seconds since epoc
     pub reviewed_at: DateTime<Utc>,
 
     pub categories: TopicCategories,
@@ -28,7 +27,7 @@ pub struct Topic {
 pub struct TopicCategories(pub Vec<Category>);
 
 impl TopicCategories {
-    pub fn set(&self, categories: Vec<String>) -> TopicCategories {
+    pub fn new(categories: Vec<String>) -> TopicCategories {
         let merged: HashSet<String> = categories.iter().map(|c| c.to_lowercase()).collect();
 
         TopicCategories(merged.into_iter().map(|name| Category { name }).collect())
@@ -84,21 +83,21 @@ impl Topic {
     }
 
     pub fn days_since_last_review(&self, now: DateTime<Utc>) -> i64 {
-        (now - self.reviewed_at).num_days()
+        (now - &self.reviewed_at).num_days()
     }
 
     pub fn update_quality(&self, quality: u32, review_date: DateTime<Utc>) -> Topic {
         sm2(&self, quality, review_date)
     }
 
-    pub fn update_categories(&self, categories: Vec<String>) -> Topic {
+    pub fn update_categories(self, categories: Vec<String>) -> Topic {
         Topic {
             name: self.name.clone(),
             repetitions: self.repetitions,
             interval: self.interval,
             ease_factor: self.ease_factor,
             reviewed_at: self.reviewed_at,
-            categories: self.categories.set(categories),
+            categories: TopicCategories::new(categories),
         }
     }
 

@@ -29,7 +29,7 @@ impl Session {
         }
     }
 
-    pub fn update_content(&self, content: &String, now: DateTime<Utc>) -> Session {
+    pub fn update_content(self, content: &String, now: DateTime<Utc>) -> Session {
         Session {
             id: self.id.clone(),
             name: self.name.clone(),
