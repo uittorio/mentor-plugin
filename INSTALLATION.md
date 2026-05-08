@@ -120,11 +120,49 @@ Add ~/.local/bin to your PATH
 |------|-------------|
 | Dashboard binary (downloaded on first run) | `~/.local/bin/mentor-dashboard` |
 
+## Configuration (optional)
+
+You can configure the dashboard by creating a `dashboard.toml` file in the knowledge data folder:
+
+```
+~/.local/share/agent-mentor/dashboard.toml
+```
+
+### Review topic commands
+
+When you press `Enter` on a topic in the dashboard, it launches a review session. You can configure one or more commands to open that session — and rotate between them with `a`.
+
+Each command has a `name` (shown in the dashboard) and `args` (the binary and its arguments). Use `$MentorPrompt` as a placeholder — the dashboard replaces it with the prompt for the selected topic.
+
+Example for Mac using iTerm2 and Claude
+```toml
+[[review_topic_commands]]
+name = "claude"
+args = [
+  "/usr/bin/osascript",
+  "-e",
+'''
+  tell application "iTerm2"
+      activate
+      set newWindow to (create window with default profile)
+      tell current session of newWindow
+          write text "cd your/preferred/dir && /opt/homebrew/bin/claude \"$MentorPrompt\""
+      end tell
+  end tell
+'''
+]
+```.
+
 # Uninstall
 
 Remove the mentor dashboard binary:
 ```bash
 rm -f ~/.local/bin/mentor-dashboard
+```
+
+Remove the config
+```bash
+rm -f ~/.local/share/agent-mentor/sync.toml
 ```
 
 # Sync

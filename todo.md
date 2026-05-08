@@ -1,6 +1,8 @@
 ## Reflections on development
-- Press on dashboard and start claude session?
 - Build different mentor based on teaching methodology
+- broken configuration for database sync breaks everything.
+- broken configuration for dashboard breaks everything.
+- if you are offline it doesnt work seeing the dashboard unless you disable the database
 
 ## Future
 - Keep going with VISION (shareable sessions)

@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use learning::{category::Category, session::Session, topic::Topic};
 use ratatui::widgets::TableState;
 
+use crate::config::DashboardConfig;
+
 #[derive(Copy, Clone)]
 pub enum View {
     Topics,
@@ -27,6 +29,8 @@ pub struct Model {
     pub selected_topics_pane: TopicsPane,
     pub selected_stats_filter: StatsFilter,
     pub category_state: TableState,
+    pub config: Option<DashboardConfig>,
+    pub selected_review_topic_command: Option<usize>,
 }
 
 #[derive(PartialEq)]
@@ -46,7 +50,11 @@ pub enum TopicsPane {
 }
 
 impl Model {
-    pub fn new() -> Self {
+    pub fn new(config: Option<DashboardConfig>) -> Self {
+        let selected_review_topic_command_index = config
+            .as_ref()
+            .and_then(|c| c.review_topic_commands.first().map(|_| 0));
+
         Model {
             selected_view: View::Topics,
             topics: vec![],
@@ -59,6 +67,8 @@ impl Model {
             selected_topics_pane: TopicsPane::List,
             selected_stats_filter: StatsFilter::Total,
             category_state: TableState::default(),
+            config,
+            selected_review_topic_command: selected_review_topic_command_index,
         }
     }
 }
@@ -73,6 +83,8 @@ pub enum Message {
     NextSessionPane,
     PrevPane,
     ResetFilters,
+    ReviewTopic,
+    NextReviewTopicCommand,
 }
 
 pub fn update_selected_table_up(table_state: &mut TableState) {
@@ -94,7 +106,12 @@ pub fn update_selected_table_down(table_state: &mut TableState, list_len: usize)
         None => table_state.select(Some(0)),
     };
 }
-pub fn update(model: &mut Model, msg: Message) -> () {
+
+pub enum UpdateCommand {
+    StartReview(String),
+}
+
+pub fn update(model: &mut Model, msg: Message) -> Option<UpdateCommand> {
     match msg {
         Message::ShowTopicView => model.selected_view = View::Topics,
         Message::ShowSessionView => model.selected_view = View::Sessions,
@@ -185,5 +202,27 @@ pub fn update(model: &mut Model, msg: Message) -> () {
             },
         },
         Message::ResetFilters => model.category_state.select(None),
-    }
+        Message::ReviewTopic => match (
+            model.selected_view,
+            model.selected_topics_pane,
+            model.topics_state.selected(),
+        ) {
+            (View::Topics, TopicsPane::List, Some(selected_topic_index)) => {
+                let selected_topic = &model.topics[selected_topic_index];
+                return Some(UpdateCommand::StartReview(selected_topic.name.clone()));
+            }
+            (_, _, _) => (),
+        },
+        Message::NextReviewTopicCommand => {
+            match (&model.config, model.selected_review_topic_command) {
+                (Some(config), Some(selected)) => {
+                    let next = (selected + 1) % config.review_topic_commands.len();
+                    model.selected_review_topic_command = Some(next);
+                }
+                (_, _) => (),
+            }
+        }
+    };
+
+    None
 }

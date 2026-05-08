@@ -12,15 +12,16 @@ use learning::sql::sql_storage::SqlConnection;
 use learning::sql::sql_topic_storage::SqlTopicStorage;
 use learning::topic_storage::TopicStorage;
 use ratatui::layout::{Layout, Offset, Rect};
-use ratatui::style::{Color, Stylize};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Tabs};
+use ratatui::style::Color;
+use ratatui::widgets::{Block, Paragraph, Tabs};
 use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend, style::Style};
 
+use crate::config::config;
 use crate::sessions::render_sessions;
-use crate::state::{Message, Model, View, update};
+use crate::state::{Message, Model, UpdateCommand, View, update};
 use crate::topics::render_topics;
 
+mod config;
 mod sessions;
 mod state;
 mod topics;
@@ -46,8 +47,9 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
     let arc_conn = Arc::new(conn);
     let topic_storage = SqlTopicStorage(arc_conn.clone());
     let session_storage = SqlSessionStorage(arc_conn.clone());
+    let config = config()?;
 
-    let mut model = Model::new();
+    let mut model = Model::new(config);
 
     update(
         &mut model,
@@ -86,13 +88,31 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
                     KeyCode::Char('k') => update(&mut model, Message::NavigateUp),
                     KeyCode::Char('h') => update(&mut model, Message::PrevPane),
                     KeyCode::Char('l') => update(&mut model, Message::NextSessionPane),
+                    KeyCode::Char('a') => update(&mut model, Message::NextReviewTopicCommand),
+                    KeyCode::Enter => match update(&mut model, Message::ReviewTopic) {
+                        Some(UpdateCommand::StartReview(topic_name)) => {
+                            match (&model.config, &model.selected_review_topic_command) {
+                                (Some(config), Some(index)) => {
+                                    let command = &config.review_topic_commands[*index];
+
+                                    command.start(&topic_name)?;
+                                }
+                                (_, _) => (),
+                            }
+
+                            None
+                        }
+                        None => None,
+                    },
                     KeyCode::Esc => update(&mut model, Message::ResetFilters),
-                    _ => {}
+                    _ => None,
                 },
-                _ => {}
+                _ => None,
             },
-            _ => {}
-        }
+            _ => None,
+        };
+
+        ()
     }
 
     Ok(())
@@ -102,14 +122,19 @@ fn render(frame: &mut Frame, model: &mut Model) {
     let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let [top, main] = frame.area().layout(&layout);
 
-    let title = Line::from_iter([
-        Span::from("Mentor dashboard").bold(),
-        Span::from(
-            "((q) to quit, (s) sessions, (t) topics, (j,k) navigate up and down, (h,l) rotate pane), (esc) to reset category filter",
-        ),
-    ]);
+    let configuration = if let Some(config) = model.selected_review_topic_command {
+        let name = &model.config.as_ref().unwrap().review_topic_commands[config].name;
+        format!("(a) to rotate review topic configuration ({}),", name)
+    } else {
+        "".to_string()
+    };
 
-    frame.render_widget(title.centered(), top);
+    let instructions = Paragraph::new(format!(
+        "(q) to quit, (s) sessions, (t) topics, (j,k) navigate up and down, (h,l) rotate pane, {} (esc) to reset category filter",
+        configuration
+    ));
+
+    frame.render_widget(instructions.centered(), top);
 
     render_content(frame, main, model);
     render_tabs(frame, main + Offset::new(1, 0), model);

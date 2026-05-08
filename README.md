@@ -110,6 +110,7 @@ graph LR
 | [Claude Code](https://claude.ai/code) | ✓ |
 | [OpenCode](https://opencode.ai) | ✓ |
 
+
 Both macOS and Linux are supported.
 
 → **[Installation instructions](./INSTALLATION.md)**

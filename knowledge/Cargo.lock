@@ -561,7 +561,9 @@ dependencies = [
  "crossterm",
  "learning",
  "ratatui",
+ "serde",
  "tokio",
+ "toml",
 ]
 
 [[package]]
