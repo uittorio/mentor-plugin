@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt};
 
 use learning::{category::Category, session::Session, topic::Topic};
 use ratatui::widgets::TableState;
@@ -17,7 +17,11 @@ pub enum SessionsPane {
     SessionMd,
 }
 
-pub struct Model {
+pub enum Log {
+    Info(String),
+}
+
+pub struct Model<'a> {
     pub topics: Vec<Topic>,
     pub categories: Vec<Category>,
     pub sessions: Vec<Session>,
@@ -31,6 +35,7 @@ pub struct Model {
     pub category_state: TableState,
     pub config: Option<DashboardConfig>,
     pub selected_review_topic_command: Option<usize>,
+    pub logger: &'a mut DashboardLogger,
 }
 
 #[derive(PartialEq)]
@@ -49,8 +54,22 @@ pub enum TopicsPane {
     Categories,
 }
 
-impl Model {
-    pub fn new(config: Option<DashboardConfig>) -> Self {
+pub struct DashboardLogger {
+    pub logs: Vec<Log>,
+}
+
+impl DashboardLogger {
+    pub fn new() -> Self {
+        DashboardLogger { logs: vec![] }
+    }
+
+    pub fn info(&mut self, msg: &str) {
+        self.logs.push(Log::Info(msg.to_string()))
+    }
+}
+
+impl<'a> Model<'a> {
+    pub fn new(config: Option<DashboardConfig>, logger: &'a mut DashboardLogger) -> Self {
         let selected_review_topic_command_index = config
             .as_ref()
             .and_then(|c| c.review_topic_commands.first().map(|_| 0));
@@ -69,7 +88,28 @@ impl Model {
             category_state: TableState::default(),
             config,
             selected_review_topic_command: selected_review_topic_command_index,
+            logger: logger,
         }
+    }
+}
+
+impl fmt::Display for Message {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Message::ShowTopicView => "ShowTopicView",
+            Message::ShowSessionView => "ShowSessionView",
+            Message::UpdateTopics(_) => "UpdateTopics",
+            Message::UpdateSessions(_) => "UpdateSessions",
+            Message::NavigateUp => "NavigateUp",
+            Message::NavigateDown => "NavigateDown",
+            Message::NextSessionPane => "NextSessionPane",
+            Message::PrevPane => "PrevPane",
+            Message::ResetFilters => "ResetFilters",
+            Message::ReviewTopic => "ReviewTopic",
+            Message::NextReviewTopicCommand => "NextReviewTopicCommand",
+        };
+
+        write!(f, "{name}")
     }
 }
 
@@ -112,6 +152,8 @@ pub enum UpdateCommand {
 }
 
 pub fn update(model: &mut Model, msg: Message) -> Option<UpdateCommand> {
+    model.logger.info(&format!("Message: {}", msg));
+
     match msg {
         Message::ShowTopicView => model.selected_view = View::Topics,
         Message::ShowSessionView => model.selected_view = View::Sessions,

@@ -3,9 +3,11 @@
 - broken configuration for database sync breaks everything.
 - broken configuration for dashboard breaks everything.
 - if you are offline it doesnt work seeing the dashboard unless you disable the database
+- show error logs to show database connection errors
+- installation, is there a simpler way to run updates
+- installtion, is there a more transparent way to run this project? It feels like there are many things around (the bin, the skills, the installation script, the configuration files, the database). They are all documented on github 
 
 ## Future
-- Keep going with VISION (shareable sessions)
 - Make the skill less developer focused, this could be used for anything
 - WINDOWS support (it just a matter of where copying stuff, binaries for bins and if sh installation works)
 

@@ -4,8 +4,14 @@ use crate::{file_storage::file_storage_folder, sql::migrations::run::run_migrati
 use libsql::{Builder, Connection};
 use serde::Deserialize;
 
+pub enum ConnectionType {
+    Remote,
+    Local,
+}
+
 pub struct SqlConnection {
     pub connection: Connection,
+    pub connection_type: ConnectionType,
 }
 
 impl SqlConnection {
@@ -16,7 +22,7 @@ impl SqlConnection {
         match config {
             Some(config) => {
                 let database =
-                    Builder::new_remote_replica(local_path, config.turso.url, config.turso.token)
+                    Builder::new_remote_replica(&local_path, config.turso.url, config.turso.token)
                         .build()
                         .await?;
 
@@ -24,13 +30,19 @@ impl SqlConnection {
 
                 database.sync().await?;
                 run_migrations(&connection).await?;
-                Ok(SqlConnection { connection })
+                Ok(SqlConnection {
+                    connection,
+                    connection_type: ConnectionType::Remote,
+                })
             }
             None => {
                 let database = Builder::new_local(local_path).build().await?;
                 let connection = database.connect()?;
                 run_migrations(&connection).await?;
-                Ok(SqlConnection { connection })
+                Ok(SqlConnection {
+                    connection,
+                    connection_type: ConnectionType::Local,
+                })
             }
         }
     }
@@ -40,7 +52,10 @@ impl SqlConnection {
         let database = Builder::new_local(":memory:").build().await?;
         let connection = database.connect()?;
         run_migrations(&connection).await?;
-        Ok(SqlConnection { connection })
+        Ok(SqlConnection {
+            connection,
+            connection_type: ConnectionType::Local,
+        })
     }
 }
 

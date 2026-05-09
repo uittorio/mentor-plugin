@@ -238,7 +238,16 @@ pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
     .row_highlight_style(Style::new().bg(Color::DarkGray))
     .header(header);
 
-    frame.render_stateful_widget(table, area, &mut model.topics_state);
+    let left_block = match model.selected_topics_pane {
+        TopicsPane::List => Block::bordered().border_style(Style::new().fg(Color::Blue)),
+        _ => Block::bordered().border_style(Style::new().fg(Color::Reset)),
+    };
+
+    let left_inner = left_block.inner(area);
+
+    frame.render_widget(left_block, area);
+
+    frame.render_stateful_widget(table, left_inner, &mut model.topics_state);
 }
 
 pub fn seven_days_ago() -> DateTime<Utc> {

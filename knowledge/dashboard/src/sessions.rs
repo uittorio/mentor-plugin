@@ -42,33 +42,31 @@ pub fn render_sessions(frame: &mut Frame, area: Rect, model: &mut Model) {
 
     frame.render_stateful_widget(&table, left_inner, &mut model.session_state);
 
+    let right_block = match model.selected_session_pane {
+        SessionsPane::List => Block::bordered()
+            .border_style(Style::new().fg(Color::Reset))
+            .padding(Padding::uniform(2)),
+        SessionsPane::SessionMd => Block::bordered()
+            .padding(Padding::uniform(2))
+            .border_style(Style::new().fg(Color::Blue)),
+    };
+
+    let right_inner = right_block.inner(right);
+
+    frame.render_widget(right_block, right);
+
     match model.session_state.selected() {
-        Some(s) => {
-            let block = match model.selected_session_pane {
-                SessionsPane::List => Block::bordered()
-                    .border_style(Style::new().fg(Color::Reset))
-                    .padding(Padding::uniform(2)),
-                SessionsPane::SessionMd => Block::bordered()
-                    .padding(Padding::uniform(2))
-                    .border_style(Style::new().fg(Color::Blue)),
-            };
-
-            let inner = block.inner(right);
-
-            frame.render_widget(block, right);
-
-            match &model.sessions[s].content {
-                Some(file_content) => frame.render_widget(
-                    Paragraph::new(file_content.as_str())
-                        .scroll((model.session_md_scroll, 0))
-                        .wrap(Wrap { trim: false }),
-                    inner,
-                ),
-                None => {
-                    frame.render_widget(Paragraph::new("No content available"), inner);
-                }
+        Some(s) => match &model.sessions[s].content {
+            Some(file_content) => frame.render_widget(
+                Paragraph::new(file_content.as_str())
+                    .scroll((model.session_md_scroll, 0))
+                    .wrap(Wrap { trim: false }),
+                right_inner,
+            ),
+            None => {
+                frame.render_widget(Paragraph::new("No content available"), right_inner);
             }
-        }
+        },
         None => (),
     }
 }

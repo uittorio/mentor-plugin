@@ -5,7 +5,7 @@ use serde::Serialize;
 
 use crate::{category::Category, sm2::sm2, trigram_similarity::trigram_similarity};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Topic {
     pub name: String,
 
@@ -23,7 +23,7 @@ pub struct Topic {
     pub categories: TopicCategories,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TopicCategories(pub Vec<Category>);
 
 impl TopicCategories {

@@ -18,7 +18,7 @@ use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend, st
 
 use crate::config::config;
 use crate::sessions::render_sessions;
-use crate::state::{Message, Model, UpdateCommand, View, update};
+use crate::state::{DashboardLogger, Message, Model, UpdateCommand, View, update};
 use crate::topics::render_topics;
 
 mod config;
@@ -42,6 +42,7 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<()> {
+    let mut logger = DashboardLogger::new();
     let rt = tokio::runtime::Runtime::new()?;
     let conn = rt.block_on(SqlConnection::new())?;
     let arc_conn = Arc::new(conn);
@@ -49,7 +50,7 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
     let session_storage = SqlSessionStorage(arc_conn.clone());
     let config = config()?;
 
-    let mut model = Model::new(config);
+    let mut model = Model::new(config, &mut logger);
 
     update(
         &mut model,
@@ -119,9 +120,36 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
 }
 
 fn render(frame: &mut Frame, model: &mut Model) {
-    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
-    let [top, main] = frame.area().layout(&layout);
+    let layout = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Fill(1),
+        Constraint::Length(3),
+    ]);
 
+    let [top, main, bottom] = frame.area().layout(&layout);
+
+    render_header(frame, top, model);
+    render_content(frame, main, model);
+    render_message(frame, bottom, model);
+}
+
+fn render_message(frame: &mut Frame, area: Rect, model: &mut Model) {
+    let block = Block::bordered();
+    let inner = block.inner(area);
+
+    let first_log = model
+        .logger
+        .logs
+        .last()
+        .map_or("".to_string(), |l| match l {
+            state::Log::Info(m) => m.clone(),
+        });
+
+    frame.render_widget(block, area);
+    frame.render_widget(Paragraph::new(first_log), inner);
+}
+
+fn render_header(frame: &mut Frame, area: Rect, model: &mut Model) {
     let configuration = if let Some(config) = model.selected_review_topic_command {
         let name = &model.config.as_ref().unwrap().review_topic_commands[config].name;
         format!("(a) to rotate review topic configuration ({}),", name)
@@ -133,21 +161,14 @@ fn render(frame: &mut Frame, model: &mut Model) {
         "(q) to quit, (s) sessions, (t) topics, (j,k) navigate up and down, (h,l) rotate pane, {} (esc) to reset category filter",
         configuration
     ));
-
-    frame.render_widget(instructions.centered(), top);
-
-    render_content(frame, main, model);
-    render_tabs(frame, main + Offset::new(1, 0), model);
+    frame.render_widget(instructions.centered(), area);
+    render_tabs(frame, area + Offset::new(0, 2), model);
 }
 
 fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
-    let block = Block::bordered();
-    let inner = block.inner(area);
-    frame.render_widget(block, area);
-
     match model.selected_view {
-        View::Topics => render_topics(frame, inner, model),
-        View::Sessions => render_sessions(frame, inner, model),
+        View::Topics => render_topics(frame, area, model),
+        View::Sessions => render_sessions(frame, area, model),
     };
 }
 
