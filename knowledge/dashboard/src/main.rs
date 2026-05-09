@@ -11,21 +11,22 @@ use learning::sql::sql_session_storage::SqlSessionStorage;
 use learning::sql::sql_storage::SqlConnection;
 use learning::sql::sql_topic_storage::SqlTopicStorage;
 use learning::topic_storage::TopicStorage;
-use ratatui::layout::{Layout, Offset, Rect};
-use ratatui::style::Color;
-use ratatui::widgets::{Block, Paragraph, Tabs};
-use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend, style::Style};
+use ratatui::layout::Layout;
+use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend};
 
 use crate::config::config;
-use crate::logger::{DashboardLogger, Log};
-use crate::logs::render_logs;
-use crate::sessions::render_sessions;
-use crate::state::{Message, Model, UpdateCommand, View, update};
-use crate::topics::render_topics;
+use crate::content::render_content;
+use crate::header::render_header;
+use crate::logger::DashboardLogger;
+use crate::message::render_message;
+use crate::state::{Message, Model, UpdateCommand, update};
 
 mod config;
+mod content;
+mod header;
 mod logger;
 mod logs;
+mod message;
 mod sessions;
 mod state;
 mod topics;
@@ -49,12 +50,13 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
     let mut logger = DashboardLogger::new();
     let rt = tokio::runtime::Runtime::new()?;
     let conn = rt.block_on(SqlConnection::new())?;
+    let connection_type = conn.connection_type.clone();
     let arc_conn = Arc::new(conn);
     let topic_storage = SqlTopicStorage(arc_conn.clone());
     let session_storage = SqlSessionStorage(arc_conn.clone());
     let config = config()?;
 
-    let mut model = Model::new(config, &mut logger);
+    let mut model = Model::new(config, &mut logger, connection_type);
 
     update(
         &mut model,
@@ -136,125 +138,6 @@ fn render(frame: &mut Frame, model: &mut Model) {
     render_header(frame, top, model);
     render_content(frame, main, model);
     render_message(frame, bottom, model);
-}
-
-fn render_message(frame: &mut Frame, area: Rect, model: &mut Model) {
-    let block = Block::bordered();
-    let inner = block.inner(area);
-
-    let first_log_message = model
-        .logger
-        .logs
-        .iter()
-        .nth(0)
-        .map_or("".to_string(), |l| match l {
-            Log::Info(m, _) => m.clone(),
-        });
-
-    frame.render_widget(block, area);
-    frame.render_widget(Paragraph::new(first_log_message), inner);
-}
-
-struct KeyConfiguration {
-    key: String,
-    message: String,
-}
-
-fn render_header(frame: &mut Frame, area: Rect, model: &mut Model) {
-    let mut configuration = vec![KeyConfiguration {
-        key: "q".to_string(),
-        message: "quit".to_string(),
-    }];
-
-    let mut configuration_topic = vec![
-        KeyConfiguration {
-            key: "s".to_string(),
-            message: "sessions".to_string(),
-        },
-        KeyConfiguration {
-            key: "l".to_string(),
-            message: "logs".to_string(),
-        },
-        KeyConfiguration {
-            key: "→|←".to_string(),
-            message: "switch pane".to_string(),
-        },
-        KeyConfiguration {
-            key: "Esc".to_string(),
-            message: "reset category filter".to_string(),
-        },
-    ];
-
-    if let Some(config) = model.selected_review_topic_command {
-        let name = &model.config.as_ref().unwrap().review_topic_commands[config].name;
-        configuration_topic.push(KeyConfiguration {
-            key: "a".to_string(),
-            message: format!("review topic configuration ({}),", name),
-        });
-    };
-
-    let mut configuration_session = vec![
-        KeyConfiguration {
-            key: "t".to_string(),
-            message: "topics".to_string(),
-        },
-        KeyConfiguration {
-            key: "l".to_string(),
-            message: "logs".to_string(),
-        },
-    ];
-
-    let mut configuration_logs = vec![
-        KeyConfiguration {
-            key: "t".to_string(),
-            message: "topics".to_string(),
-        },
-        KeyConfiguration {
-            key: "s".to_string(),
-            message: "sessions".to_string(),
-        },
-    ];
-
-    match model.selected_view {
-        View::Topics => configuration.append(&mut configuration_topic),
-        View::Sessions => configuration.append(&mut configuration_session),
-        View::Logs => configuration.append(&mut configuration_logs),
-    };
-
-    let instructions = configuration
-        .iter()
-        .map(|c| format!("({}) {}", c.key, c.message))
-        .collect::<Vec<_>>()
-        .join(", ");
-
-    let instructions = Paragraph::new(instructions);
-    frame.render_widget(instructions.centered(), area);
-    render_tabs(frame, area + Offset::new(0, 2), model);
-}
-
-fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
-    match model.selected_view {
-        View::Topics => render_topics(frame, area, model),
-        View::Sessions => render_sessions(frame, area, model),
-        View::Logs => render_logs(frame, area, model),
-    };
-}
-
-fn render_tabs(frame: &mut Frame, area: Rect, model: &Model) {
-    let [_, center, _] = Layout::horizontal([
-        Constraint::Fill(1),
-        Constraint::Length(30),
-        Constraint::Fill(1),
-    ])
-    .areas(area);
-
-    let tabs = Tabs::new(vec!["Topics", "Sessions", "Logs"])
-        .style(Color::White)
-        .highlight_style(Style::default().magenta().on_black().bold())
-        .select(model.selected_view as usize)
-        .divider("|")
-        .padding(" ", " ");
-    frame.render_widget(tabs, center);
 }
 
 fn has_version_argument(args: &mut Args) -> bool {

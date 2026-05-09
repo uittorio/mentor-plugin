@@ -4,6 +4,7 @@ use crate::{file_storage::file_storage_folder, sql::migrations::run::run_migrati
 use libsql::{Builder, Connection};
 use serde::Deserialize;
 
+#[derive(Clone)]
 pub enum ConnectionType {
     Remote,
     Local,
@@ -19,13 +20,22 @@ impl SqlConnection {
         let config = config()?;
         let local_path = db_path()?;
 
-        match config {
-            Some(config) => {
-                let database =
-                    Builder::new_remote_replica(&local_path, config.turso.url, config.turso.token)
-                        .build()
-                        .await?;
+        let sql_connection = match config {
+            Some(config) => SqlConnection::remote(local_path, config).await?,
+            None => SqlConnection::local(local_path).await?,
+        };
 
+        Ok(sql_connection)
+    }
+
+    async fn remote(local_path: String, config: SyncConfig) -> eyre::Result<SqlConnection> {
+        let database =
+            Builder::new_remote_replica(&local_path, config.turso.url, config.turso.token)
+                .build()
+                .await;
+
+        match database {
+            Ok(database) => {
                 let connection = database.connect()?;
 
                 database.sync().await?;
@@ -35,16 +45,18 @@ impl SqlConnection {
                     connection_type: ConnectionType::Remote,
                 })
             }
-            None => {
-                let database = Builder::new_local(local_path).build().await?;
-                let connection = database.connect()?;
-                run_migrations(&connection).await?;
-                Ok(SqlConnection {
-                    connection,
-                    connection_type: ConnectionType::Local,
-                })
-            }
+            Err(_) => Ok(SqlConnection::local(local_path).await?),
         }
+    }
+
+    async fn local(local_path: String) -> eyre::Result<SqlConnection> {
+        let database = Builder::new_local(local_path).build().await?;
+        let connection = database.connect()?;
+        run_migrations(&connection).await?;
+        Ok(SqlConnection {
+            connection,
+            connection_type: ConnectionType::Local,
+        })
     }
 
     #[cfg(test)]

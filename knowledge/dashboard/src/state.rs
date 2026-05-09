@@ -1,4 +1,6 @@
-use learning::{category::Category, session::Session, topic::Topic};
+use learning::{
+    category::Category, session::Session, sql::sql_storage::ConnectionType, topic::Topic,
+};
 use ratatui::widgets::{ListState, TableState};
 use std::{collections::HashSet, fmt};
 
@@ -18,6 +20,7 @@ pub enum SessionsPane {
 }
 
 pub struct Model<'a> {
+    pub connection_type: ConnectionType,
     pub topics: Vec<Topic>,
     pub categories: Vec<Category>,
     pub sessions: Vec<Session>,
@@ -52,12 +55,17 @@ pub enum TopicsPane {
 }
 
 impl<'a> Model<'a> {
-    pub fn new(config: Option<DashboardConfig>, logger: &'a mut DashboardLogger) -> Self {
+    pub fn new(
+        config: Option<DashboardConfig>,
+        logger: &'a mut DashboardLogger,
+        connection_type: ConnectionType,
+    ) -> Self {
         let selected_review_topic_command_index = config
             .as_ref()
             .and_then(|c| c.review_topic_commands.first().map(|_| 0));
 
         Model {
+            connection_type,
             selected_view: View::Topics,
             topics: vec![],
             categories: vec![],
