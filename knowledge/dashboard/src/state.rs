@@ -1,24 +1,20 @@
+use learning::{category::Category, session::Session, topic::Topic};
+use ratatui::widgets::{ListState, TableState};
 use std::{collections::HashSet, fmt};
 
-use learning::{category::Category, session::Session, topic::Topic};
-use ratatui::widgets::TableState;
-
-use crate::config::DashboardConfig;
+use crate::{config::DashboardConfig, logger::DashboardLogger};
 
 #[derive(Copy, Clone)]
 pub enum View {
     Topics,
     Sessions,
+    Logs,
 }
 
 #[derive(Copy, Clone)]
 pub enum SessionsPane {
     List,
     SessionMd,
-}
-
-pub enum Log {
-    Info(String),
 }
 
 pub struct Model<'a> {
@@ -28,6 +24,7 @@ pub struct Model<'a> {
     pub selected_view: View,
     pub topics_state: TableState,
     pub session_state: TableState,
+    pub logs_state: ListState,
     pub selected_session_pane: SessionsPane,
     pub session_md_scroll: u16,
     pub selected_topics_pane: TopicsPane,
@@ -54,20 +51,6 @@ pub enum TopicsPane {
     Categories,
 }
 
-pub struct DashboardLogger {
-    pub logs: Vec<Log>,
-}
-
-impl DashboardLogger {
-    pub fn new() -> Self {
-        DashboardLogger { logs: vec![] }
-    }
-
-    pub fn info(&mut self, msg: &str) {
-        self.logs.push(Log::Info(msg.to_string()))
-    }
-}
-
 impl<'a> Model<'a> {
     pub fn new(config: Option<DashboardConfig>, logger: &'a mut DashboardLogger) -> Self {
         let selected_review_topic_command_index = config
@@ -81,6 +64,7 @@ impl<'a> Model<'a> {
             sessions: vec![],
             topics_state: TableState::default(),
             session_state: TableState::default(),
+            logs_state: ListState::default(),
             selected_session_pane: SessionsPane::List,
             session_md_scroll: 0,
             selected_topics_pane: TopicsPane::List,
@@ -98,6 +82,7 @@ impl fmt::Display for Message {
         let name = match self {
             Message::ShowTopicView => "ShowTopicView",
             Message::ShowSessionView => "ShowSessionView",
+            Message::ShowLogsView => "ShowLogsView",
             Message::UpdateTopics(_) => "UpdateTopics",
             Message::UpdateSessions(_) => "UpdateSessions",
             Message::NavigateUp => "NavigateUp",
@@ -116,6 +101,7 @@ impl fmt::Display for Message {
 pub enum Message {
     ShowTopicView,
     ShowSessionView,
+    ShowLogsView,
     UpdateTopics(Vec<Topic>),
     UpdateSessions(Vec<Session>),
     NavigateUp,
@@ -147,6 +133,26 @@ pub fn update_selected_table_down(table_state: &mut TableState, list_len: usize)
     };
 }
 
+pub fn update_selected_list_up(list_state: &mut ListState) {
+    match list_state.selected() {
+        Some(s) => {
+            let up = if s == 0 { 0 } else { s - 1 };
+            list_state.select(Some(up))
+        }
+        None => list_state.select(Some(0)),
+    };
+}
+
+pub fn update_selected_list_down(list_state: &mut ListState, list_len: usize) {
+    match list_state.selected() {
+        Some(s) => {
+            let down = if s != list_len - 1 { s + 1 } else { s };
+            list_state.select(Some(down))
+        }
+        None => list_state.select(Some(0)),
+    };
+}
+
 pub enum UpdateCommand {
     StartReview(String),
 }
@@ -157,6 +163,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<UpdateCommand> {
     match msg {
         Message::ShowTopicView => model.selected_view = View::Topics,
         Message::ShowSessionView => model.selected_view = View::Sessions,
+        Message::ShowLogsView => model.selected_view = View::Logs,
         Message::NextSessionPane | Message::PrevPane => {
             match (
                 model.selected_view,
@@ -178,6 +185,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<UpdateCommand> {
                 (View::Sessions, SessionsPane::SessionMd, _) => {
                     model.selected_session_pane = SessionsPane::List
                 }
+                (_, _, _) => (),
             }
         }
         Message::UpdateTopics(topics) => {
@@ -215,6 +223,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<UpdateCommand> {
                 SessionsPane::List => update_selected_table_up(&mut model.session_state),
                 SessionsPane::SessionMd => model.session_md_scroll = model.session_md_scroll + 1,
             },
+            View::Logs => update_selected_list_up(&mut model.logs_state),
         },
         Message::NavigateDown => match model.selected_view {
             View::Topics => match model.selected_topics_pane {
@@ -242,6 +251,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<UpdateCommand> {
                     model.session_md_scroll = model.session_md_scroll.saturating_sub(1)
                 }
             },
+            View::Logs => {
+                update_selected_list_down(&mut model.logs_state, model.logger.logs.iter().count())
+            }
         },
         Message::ResetFilters => model.category_state.select(None),
         Message::ReviewTopic => match (

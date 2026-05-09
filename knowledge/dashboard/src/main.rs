@@ -17,11 +17,15 @@ use ratatui::widgets::{Block, Paragraph, Tabs};
 use ratatui::{Frame, Terminal, layout::Constraint, prelude::CrosstermBackend, style::Style};
 
 use crate::config::config;
+use crate::logger::{DashboardLogger, Log};
+use crate::logs::render_logs;
 use crate::sessions::render_sessions;
-use crate::state::{DashboardLogger, Message, Model, UpdateCommand, View, update};
+use crate::state::{Message, Model, UpdateCommand, View, update};
 use crate::topics::render_topics;
 
 mod config;
+mod logger;
+mod logs;
 mod sessions;
 mod state;
 mod topics;
@@ -85,10 +89,11 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
                     KeyCode::Char('q') => break,
                     KeyCode::Char('s') => update(&mut model, Message::ShowSessionView),
                     KeyCode::Char('t') => update(&mut model, Message::ShowTopicView),
-                    KeyCode::Char('j') => update(&mut model, Message::NavigateDown),
-                    KeyCode::Char('k') => update(&mut model, Message::NavigateUp),
-                    KeyCode::Char('h') => update(&mut model, Message::PrevPane),
-                    KeyCode::Char('l') => update(&mut model, Message::NextSessionPane),
+                    KeyCode::Char('l') => update(&mut model, Message::ShowLogsView),
+                    KeyCode::Down => update(&mut model, Message::NavigateDown),
+                    KeyCode::Up => update(&mut model, Message::NavigateUp),
+                    KeyCode::Left => update(&mut model, Message::PrevPane),
+                    KeyCode::Right => update(&mut model, Message::NextSessionPane),
                     KeyCode::Char('a') => update(&mut model, Message::NextReviewTopicCommand),
                     KeyCode::Enter => match update(&mut model, Message::ReviewTopic) {
                         Some(UpdateCommand::StartReview(topic_name)) => {
@@ -137,30 +142,92 @@ fn render_message(frame: &mut Frame, area: Rect, model: &mut Model) {
     let block = Block::bordered();
     let inner = block.inner(area);
 
-    let first_log = model
+    let first_log_message = model
         .logger
         .logs
-        .last()
+        .iter()
+        .nth(0)
         .map_or("".to_string(), |l| match l {
-            state::Log::Info(m) => m.clone(),
+            Log::Info(m, _) => m.clone(),
         });
 
     frame.render_widget(block, area);
-    frame.render_widget(Paragraph::new(first_log), inner);
+    frame.render_widget(Paragraph::new(first_log_message), inner);
+}
+
+struct KeyConfiguration {
+    key: String,
+    message: String,
 }
 
 fn render_header(frame: &mut Frame, area: Rect, model: &mut Model) {
-    let configuration = if let Some(config) = model.selected_review_topic_command {
+    let mut configuration = vec![KeyConfiguration {
+        key: "q".to_string(),
+        message: "quit".to_string(),
+    }];
+
+    let mut configuration_topic = vec![
+        KeyConfiguration {
+            key: "s".to_string(),
+            message: "sessions".to_string(),
+        },
+        KeyConfiguration {
+            key: "l".to_string(),
+            message: "logs".to_string(),
+        },
+        KeyConfiguration {
+            key: "→|←".to_string(),
+            message: "switch pane".to_string(),
+        },
+        KeyConfiguration {
+            key: "Esc".to_string(),
+            message: "reset category filter".to_string(),
+        },
+    ];
+
+    if let Some(config) = model.selected_review_topic_command {
         let name = &model.config.as_ref().unwrap().review_topic_commands[config].name;
-        format!("(a) to rotate review topic configuration ({}),", name)
-    } else {
-        "".to_string()
+        configuration_topic.push(KeyConfiguration {
+            key: "a".to_string(),
+            message: format!("review topic configuration ({}),", name),
+        });
     };
 
-    let instructions = Paragraph::new(format!(
-        "(q) to quit, (s) sessions, (t) topics, (j,k) navigate up and down, (h,l) rotate pane, {} (esc) to reset category filter",
-        configuration
-    ));
+    let mut configuration_session = vec![
+        KeyConfiguration {
+            key: "t".to_string(),
+            message: "topics".to_string(),
+        },
+        KeyConfiguration {
+            key: "l".to_string(),
+            message: "logs".to_string(),
+        },
+    ];
+
+    let mut configuration_logs = vec![
+        KeyConfiguration {
+            key: "t".to_string(),
+            message: "topics".to_string(),
+        },
+        KeyConfiguration {
+            key: "s".to_string(),
+            message: "sessions".to_string(),
+        },
+    ];
+
+    match model.selected_view {
+        View::Topics => configuration.append(&mut configuration_topic),
+        View::Sessions => configuration.append(&mut configuration_session),
+        View::Logs => configuration.append(&mut configuration_logs),
+    };
+
+    let instructions = configuration
+        .iter()
+        .map(|c| format!("({}) {}", c.key, c.message))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let instructions = Paragraph::new(instructions);
     frame.render_widget(instructions.centered(), area);
     render_tabs(frame, area + Offset::new(0, 2), model);
 }
@@ -169,6 +236,7 @@ fn render_content(frame: &mut Frame, area: Rect, model: &mut Model) {
     match model.selected_view {
         View::Topics => render_topics(frame, area, model),
         View::Sessions => render_sessions(frame, area, model),
+        View::Logs => render_logs(frame, area, model),
     };
 }
 
@@ -180,7 +248,7 @@ fn render_tabs(frame: &mut Frame, area: Rect, model: &Model) {
     ])
     .areas(area);
 
-    let tabs = Tabs::new(vec!["Topics", "Sessions"])
+    let tabs = Tabs::new(vec!["Topics", "Sessions", "Logs"])
         .style(Color::White)
         .highlight_style(Style::default().magenta().on_black().bold())
         .select(model.selected_view as usize)
