@@ -151,7 +151,7 @@ args = [
   end tell
 '''
 ]
-```.
+```
 
 # Uninstall
 
@@ -162,7 +162,7 @@ rm -f ~/.local/bin/mentor-dashboard
 
 Remove the config
 ```bash
-rm -f ~/.local/share/agent-mentor/sync.toml
+rm -f ~/.local/share/agent-mentor/dashboard.toml
 ```
 
 # Sync

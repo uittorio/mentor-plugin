@@ -86,7 +86,7 @@ pub fn render_stats(frame: &mut Frame, area: Rect, model: &mut Model) {
             StatsFilter::Overdue,
             "Overdue",
             topics_overdue.len(),
-            Color::Red,
+            Color::Yellow,
         ),
         (
             last_7_days_l,
@@ -174,7 +174,7 @@ pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
     let topics_filtered = &model.filter_topics();
 
     let rows = topics_filtered.iter().map(|t| {
-        let next_review = t.next_review().format("%b %e %T %Y").to_string();
+        let next_review = t.next_review().format("%b %e").to_string();
 
         let next_review_formatted = if t.is_overdue(now()) {
             format!("{} (overdue)", next_review)
@@ -195,7 +195,7 @@ pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
         Cell::from("Ease factor"),
         Cell::from("Repetitions"),
         Cell::from("Last review"),
-        Cell::from("Next review"),
+        Cell::from("Next review 123123123"),
     ])
     .style(Style::new().bold())
     .bottom_margin(1);

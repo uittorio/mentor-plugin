@@ -1,9 +1,11 @@
 ## Reflections on development
-- Build different mentor based on teaching methodology
+- Build new mentor styles
 - broken configuration for database sync breaks everything.
 - broken configuration for dashboard breaks everything.
 - installation, is there a simpler way to run updates
-- installtion, is there a more transparent way to run this project? It feels like there are many things around (the bin, the skills, the installation script, the configuration files, the database). They are all documented on github
+- installation, is there a more transparent way to run this project? It feels like there are many things around (the bin, the skills, the installation script, the configuration files, the database). They are all documented on github but probably still unclear when something goes wrong.
+- remove mentor+flow, not used and teaching
+- remove vision as it is now changing, we understand more
 
 ## Future
 - Make the skill less developer focused, this could be used for anything

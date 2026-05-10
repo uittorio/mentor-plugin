@@ -1,6 +1,6 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, HorizontalAlignment, Layout, Offset, Rect},
+    layout::{Constraint, HorizontalAlignment, Layout, Rect},
     style::{Color, Style},
     widgets::{Paragraph, Tabs},
 };
@@ -13,6 +13,18 @@ struct KeyConfiguration {
 }
 
 pub fn render_header(frame: &mut Frame, area: Rect, model: &mut Model) {
+    let [instructions, _, tabs] = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Length(1),
+        Constraint::Length(1),
+    ])
+    .areas(area);
+
+    render_instructions(frame, instructions, model);
+    render_tabs(frame, tabs, model);
+}
+
+fn render_instructions(frame: &mut Frame, area: Rect, model: &mut Model) {
     let mut configuration = vec![KeyConfiguration {
         key: "q".to_string(),
         message: "quit".to_string(),
@@ -81,13 +93,11 @@ pub fn render_header(frame: &mut Frame, area: Rect, model: &mut Model) {
 
     let instructions = Paragraph::new(instructions);
     frame.render_widget(instructions.centered(), area);
-    render_tabs(frame, area + Offset::new(0, 2), model);
 }
-
 fn render_tabs(frame: &mut Frame, area: Rect, model: &Model) {
     let [_, center, right] = Layout::horizontal([
         Constraint::Fill(1),
-        Constraint::Length(30),
+        Constraint::Length(50),
         Constraint::Fill(1),
     ])
     .areas(area);
