@@ -6,6 +6,8 @@ use std::{
 
 use chrono::{DateTime, Utc};
 
+use crate::dates::now;
+
 pub enum Log {
     Info(String, DateTime<Utc>),
 }
@@ -34,6 +36,6 @@ impl DashboardLogger {
     }
 
     pub fn info(&mut self, msg: &str) {
-        self.logs.push_front(Log::Info(msg.to_string(), Utc::now()))
+        self.logs.push_front(Log::Info(msg.to_string(), now()))
     }
 }

@@ -23,6 +23,7 @@ use crate::state::{Message, Model, UpdateCommand, update};
 
 mod config;
 mod content;
+mod dates;
 mod header;
 mod logger;
 mod logs;

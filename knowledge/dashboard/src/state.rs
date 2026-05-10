@@ -4,7 +4,11 @@ use learning::{
 use ratatui::widgets::{ListState, TableState};
 use std::{collections::HashSet, fmt};
 
-use crate::{config::DashboardConfig, logger::DashboardLogger};
+use crate::{
+    config::DashboardConfig,
+    dates::{now, seven_days_ago},
+    logger::DashboardLogger,
+};
 
 #[derive(Copy, Clone)]
 pub enum View {
@@ -82,6 +86,40 @@ impl<'a> Model<'a> {
             selected_review_topic_command: selected_review_topic_command_index,
             logger: logger,
         }
+    }
+
+    pub fn filter_topics(&self) -> Vec<&Topic> {
+        let seven_days_ago = seven_days_ago();
+        let now = now();
+
+        self.topics
+            .iter()
+            .filter(
+                |t| match (&self.selected_stats_filter, self.category_state.selected()) {
+                    (StatsFilter::Total, None) => true,
+                    (StatsFilter::Total, Some(category)) => {
+                        t.has_category(&self.categories[category])
+                    }
+                    (StatsFilter::Overdue, None) => t.is_overdue(now),
+                    (StatsFilter::Overdue, Some(category)) => {
+                        t.is_overdue(now) && t.has_category(&self.categories[category])
+                    }
+                    (StatsFilter::Last7Days, None) => t.is_between(seven_days_ago, now),
+                    (StatsFilter::Last7Days, Some(category)) => {
+                        t.is_between(seven_days_ago, now)
+                            && t.has_category(&self.categories[category])
+                    }
+                    (StatsFilter::Mastered, None) => t.mastered(),
+                    (StatsFilter::Mastered, Some(category)) => {
+                        t.mastered() && t.has_category(&self.categories[category])
+                    }
+                    (StatsFilter::Struggling, None) => t.struggled(),
+                    (StatsFilter::Struggling, Some(category)) => {
+                        t.struggled() && t.has_category(&self.categories[category])
+                    }
+                },
+            )
+            .collect::<Vec<_>>()
     }
 }
 
@@ -270,7 +308,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<UpdateCommand> {
             model.topics_state.selected(),
         ) {
             (View::Topics, TopicsPane::List, Some(selected_topic_index)) => {
-                let selected_topic = &model.topics[selected_topic_index];
+                let selected_topic = &model.filter_topics()[selected_topic_index];
                 return Some(UpdateCommand::StartReview(selected_topic.name.clone()));
             }
             (_, _, _) => (),

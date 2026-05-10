@@ -1,4 +1,3 @@
-use chrono::{DateTime, Days, Utc};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -7,7 +6,10 @@ use ratatui::{
     widgets::{Block, Cell, Padding, Paragraph, Row, Table},
 };
 
-use crate::state::{Model, StatsFilter, TopicsPane};
+use crate::{
+    dates::{now, seven_days_ago},
+    state::{Model, StatsFilter, TopicsPane},
+};
 
 pub fn render_topics(frame: &mut Frame, area: Rect, model: &mut Model) {
     let main_layout = Layout::horizontal([Constraint::Fill(5), Constraint::Fill(2)]);
@@ -48,13 +50,13 @@ pub fn render_stats(frame: &mut Frame, area: Rect, model: &mut Model) {
     let topics_overdue = &model
         .topics
         .iter()
-        .filter(|t| t.is_overdue(Utc::now()))
+        .filter(|t| t.is_overdue(now()))
         .collect::<Vec<_>>();
 
     let last_7_days_topics = &model
         .topics
         .iter()
-        .filter(|t| t.is_between(seven_days_ago, Utc::now()))
+        .filter(|t| t.is_between(seven_days_ago, now()))
         .collect::<Vec<_>>();
 
     let mastered_topics = &model
@@ -169,39 +171,12 @@ pub fn render_categories(frame: &mut Frame, area: Rect, model: &mut Model) {
 }
 
 pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
-    let seven_days_ago = seven_days_ago();
-    let now = Utc::now();
+    let topics_filtered = &model.filter_topics();
 
-    let topics_filtered = model.topics.iter().filter(|t| {
-        match (
-            &model.selected_stats_filter,
-            model.category_state.selected(),
-        ) {
-            (StatsFilter::Total, None) => true,
-            (StatsFilter::Total, Some(category)) => t.has_category(&model.categories[category]),
-            (StatsFilter::Overdue, None) => t.is_overdue(now),
-            (StatsFilter::Overdue, Some(category)) => {
-                t.is_overdue(now) && t.has_category(&model.categories[category])
-            }
-            (StatsFilter::Last7Days, None) => t.is_between(seven_days_ago, now),
-            (StatsFilter::Last7Days, Some(category)) => {
-                t.is_between(seven_days_ago, now) && t.has_category(&model.categories[category])
-            }
-            (StatsFilter::Mastered, None) => t.mastered(),
-            (StatsFilter::Mastered, Some(category)) => {
-                t.mastered() && t.has_category(&model.categories[category])
-            }
-            (StatsFilter::Struggling, None) => t.struggled(),
-            (StatsFilter::Struggling, Some(category)) => {
-                t.struggled() && t.has_category(&model.categories[category])
-            }
-        }
-    });
-
-    let rows = topics_filtered.map(|t| {
+    let rows = topics_filtered.iter().map(|t| {
         let next_review = t.next_review().format("%b %e %T %Y").to_string();
 
-        let next_review_formatted = if t.is_overdue(now) {
+        let next_review_formatted = if t.is_overdue(now()) {
             format!("{} (overdue)", next_review)
         } else {
             next_review
@@ -247,9 +222,6 @@ pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
 
     frame.render_widget(left_block, area);
 
-    frame.render_stateful_widget(table, left_inner, &mut model.topics_state);
-}
-
-pub fn seven_days_ago() -> DateTime<Utc> {
-    Utc::now().checked_sub_days(Days::new(7)).unwrap()
+    let mut topic_state = model.topics_state;
+    frame.render_stateful_widget(table, left_inner, &mut topic_state);
 }
