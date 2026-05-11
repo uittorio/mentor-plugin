@@ -195,7 +195,7 @@ pub fn render_list(frame: &mut Frame, area: Rect, model: &mut Model) {
         Cell::from("Ease factor"),
         Cell::from("Repetitions"),
         Cell::from("Last review"),
-        Cell::from("Next review 123123123"),
+        Cell::from("Next review"),
     ])
     .style(Style::new().bold())
     .bottom_margin(1);
