@@ -55,7 +55,7 @@ fn app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> color_eyre::Result<
     let arc_conn = Arc::new(conn);
     let topic_storage = SqlTopicStorage(arc_conn.clone());
     let session_storage = SqlSessionStorage(arc_conn.clone());
-    let config = config()?;
+    let config = config();
 
     let mut model = Model::new(config, &mut logger, connection_type);
 

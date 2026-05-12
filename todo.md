@@ -1,7 +1,5 @@
 ## Reflections on development
 - Build new mentor styles
-- broken configuration for database sync breaks everything.
-- broken configuration for dashboard breaks everything.
 - installation, is there a simpler way to run updates
 - installation, is there a more transparent way to run this project? It feels like there are many things around (the bin, the skills, the installation script, the configuration files, the database). They are all documented on github but probably still unclear when something goes wrong.
 

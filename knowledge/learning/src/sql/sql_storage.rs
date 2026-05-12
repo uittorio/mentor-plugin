@@ -17,7 +17,7 @@ pub struct SqlConnection {
 
 impl SqlConnection {
     pub async fn new() -> eyre::Result<SqlConnection> {
-        let config = config()?;
+        let config = config();
         let local_path = db_path()?;
 
         let sql_connection = match config {
@@ -94,7 +94,7 @@ pub struct SyncConfig {
     turso: TursoConfig,
 }
 
-pub fn config() -> eyre::Result<Option<SyncConfig>> {
+pub fn config() -> Option<SyncConfig> {
     let folder = file_storage_folder();
     let config_path = Path::new(&folder)
         .join("sync.toml")
@@ -102,13 +102,7 @@ pub fn config() -> eyre::Result<Option<SyncConfig>> {
         .unwrap()
         .to_string();
 
-    let sync = match fs::read_to_string(config_path) {
-        Ok(file_content) => {
-            let config: SyncConfig = toml::from_str(&file_content)?;
-            Some(config)
-        }
-        Err(_) => None,
-    };
-
-    return Ok(sync);
+    fs::read_to_string(config_path)
+        .ok()
+        .and_then(|f| toml::from_str(&f).ok())
 }

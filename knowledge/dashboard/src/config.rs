@@ -35,7 +35,7 @@ impl ReviewTopicCommand {
     }
 }
 
-pub fn config() -> color_eyre::Result<Option<DashboardConfig>> {
+pub fn config() -> Option<DashboardConfig> {
     let folder = file_storage_folder();
     let config_path = Path::new(&folder)
         .join("dashboard.toml")
@@ -43,13 +43,7 @@ pub fn config() -> color_eyre::Result<Option<DashboardConfig>> {
         .unwrap()
         .to_string();
 
-    let sync = match fs::read_to_string(config_path) {
-        Ok(file_content) => {
-            let config: DashboardConfig = toml::from_str(&file_content)?;
-            Some(config)
-        }
-        Err(_) => None,
-    };
-
-    return Ok(sync);
+    fs::read_to_string(config_path)
+        .ok()
+        .and_then(|f| toml::from_str::<DashboardConfig>(&f).ok())
 }
