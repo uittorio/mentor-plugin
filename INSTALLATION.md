@@ -58,7 +58,6 @@ rm -rf ~/.local/share/agent-mentor
 Remove the skills:
 ```bash
 rm -rf ~/.config/opencode/skills/mentor+
-rm -rf ~/.config/opencode/skills/mentor+flow
 rm -rf ~/.config/opencode/skills/mentor+summarise
 rm -rf ~/.config/opencode/skills/mentor+categorize
 ```
@@ -95,7 +94,6 @@ Managed by the Claude Code plugin system. Files land wherever Claude Code stores
 | File | Destination |
 |------|-------------|
 | `SKILL.md` | `~/.config/opencode/skills/mentor+/SKILL.md` |
-| `SKILL.md` | `~/.config/opencode/skills/mentor+flow/SKILL.md` |
 | `SKILL.md` | `~/.config/opencode/skills/mentor+summarise/SKILL.md` |
 | `SKILL.md` | `~/.config/opencode/skills/mentor+categorize/SKILL.md` |
 | `mcp-server.sh` | `~/.config/opencode/agent-mentor/mcp-server.sh` |

@@ -26,10 +26,6 @@ mkdir -p "${SKILLS_DEST}/mentor+"
 download "skills/mentor+/SKILL.md" "${SKILLS_DEST}/mentor+/SKILL.md"
 echo "✓ Skill mentor+ installed → ${SKILLS_DEST}"
 
-mkdir -p "${SKILLS_DEST}/mentor+flow"
-download "skills/mentor+flow/SKILL.md" "${SKILLS_DEST}/mentor+flow/SKILL.md"
-echo "✓ Skill mentor+flow installed → ${SKILLS_DEST}"
-
 mkdir -p "${SKILLS_DEST}/mentor+categorize"
 download "skills/mentor+categorize/SKILL.md" "${SKILLS_DEST}/mentor+categorize/SKILL.md"
 echo "✓ Skill mentor+categorize installed → ${SKILLS_DEST}"

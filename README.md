@@ -17,33 +17,22 @@ Instead of handing you answers, the agent guides you with questions, hints, and 
 
 ---
 
-## Two mentor skills
+## Skills
 
 ### mentor+
 The original Socratic mentor. Always starts with questions, guides you to answers through dialogue, and falls back to direct teaching only when you're genuinely stuck. Best for exploring concepts through conversation.
-
-### mentor+flow
-An adaptive mentor that selects the teaching method based on two signals: your prior knowledge level (from SM-2) and the type of knowledge the topic requires (procedural, structural, or declarative).
-
-Rather than applying one method to everything, it:
-- **Scopes** what you want to learn and what outcome you're after
-- **Plans** a sequence of sub-topics for compound subjects (e.g. UDP hole punching)
-- **Calibrates** your prior knowledge per sub-topic
-- **Executes** the right method — worked examples for new procedural topics, Socratic for familiar declarative ones, guided design for architecture, retrieval practice for mastered skills
-
-The teaching methods are grounded in cognitive science research. See [TEACHING.md](./TEACHING.md) for the research foundation.
 
 ---
 
 ## How it works
 
 A few components wire together when installed:
-- a **skill** (mentor+ or mentor+flow) that shapes how the agent teaches
+- a **skill** (mentor+) that shapes how the agent teaches
 - an **MCP server** that tracks what you know
 - a **skill** (mentor+summarise) to summarise your session
 - a **skill** (mentor+categorize) to organise your topics by knowledge domain
 
-### mentor+ and mentor+flow
+### mentor+
 
 ```mermaid
 graph LR
@@ -125,13 +114,9 @@ Both macOS and Linux are supported.
 ```
 /mentor+
 ```
-or
-```
-/mentor+flow
-```
 
 #### OpenCode
-Run `/skills` and select `mentor+` or `mentor+flow`.
+Run `/skills` and select `mentor+`.
 
 ---
 

@@ -4,8 +4,6 @@
 - broken configuration for dashboard breaks everything.
 - installation, is there a simpler way to run updates
 - installation, is there a more transparent way to run this project? It feels like there are many things around (the bin, the skills, the installation script, the configuration files, the database). They are all documented on github but probably still unclear when something goes wrong.
-- remove mentor+flow, not used and teaching
-- remove vision as it is now changing, we understand more
 
 ## Future
 - Make the skill less developer focused, this could be used for anything
@@ -16,11 +14,6 @@
 - Rust collect and generic type.
 
 ### Feedback on mentor skills
-
-## Mentor+flow
-- Not questioning enough
-- Did not update sessions
-- This seems to have too many responsabilities and likely to fail. I am trying to make the skill too smart, to adapt too much. Maybe it should be more focus on simple principles like mentor+.
 
 ## Mentor+
 - sometimes not going to the point, circleing arund for too long
